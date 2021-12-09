@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31911.196
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "YOLOv1", "YOLOv1\YOLOv1.vcxproj", "{BE104C5F-AE35-4BA8-972E-D9467BEC9A78}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BE104C5F-AE35-4BA8-972E-D9467BEC9A78}.Debug|x64.ActiveCfg = Debug|x64
+		{BE104C5F-AE35-4BA8-972E-D9467BEC9A78}.Debug|x64.Build.0 = Debug|x64
+		{BE104C5F-AE35-4BA8-972E-D9467BEC9A78}.Debug|x86.ActiveCfg = Debug|Win32
+		{BE104C5F-AE35-4BA8-972E-D9467BEC9A78}.Debug|x86.Build.0 = Debug|Win32
+		{BE104C5F-AE35-4BA8-972E-D9467BEC9A78}.Release|x64.ActiveCfg = Release|x64
+		{BE104C5F-AE35-4BA8-972E-D9467BEC9A78}.Release|x64.Build.0 = Release|x64
+		{BE104C5F-AE35-4BA8-972E-D9467BEC9A78}.Release|x86.ActiveCfg = Release|Win32
+		{BE104C5F-AE35-4BA8-972E-D9467BEC9A78}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {558A5A2C-A67B-4937-BE22-9145019A7BC8}
+	EndGlobalSection
+EndGlobal
