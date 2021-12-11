@@ -30,6 +30,9 @@
     <ClCompile Include="networks.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="vocdataloader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils.h">
@@ -42,6 +45,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="networks.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vocdataloader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

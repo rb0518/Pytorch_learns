@@ -14,11 +14,18 @@
 #include "transforms.hpp"
 #include "networks.hpp"
 
+#include "vocdataloader.hpp"
+
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
 
 void Set_Options(po::variables_map& vm, int argc, const char* argv[], po::options_description& args, const std::string mode);
 template <typename T> void Set_Model_Params(po::variables_map& vm, T& model, const std::string name);
+
+void train(po::variables_map& vm, torch::Device& device, YOLOv1& model, std::vector<transforms_Compose>& transformBB,
+	std::vector<transforms_Compose>& transformI, const std::vector<std::string> class_names);
+
+
 
 po::options_description parse_argument() {
 	po::options_description args("Options", 200, 30);
@@ -27,7 +34,7 @@ po::options_description parse_argument() {
 
 		// (1)  Define for General Parameter
 		("help", "produce help message")
-		("data_root", po::value<std::string>()->default_value("D:\\data\\VOCdevkit\\VOC2012"))
+		("data_root", po::value<std::string>()->default_value("D:\\data\\VOCdevkit"))
 		("dataset", po::value<std::string>()->default_value("VOC2012"), "dataset name")
 		("class_list", po::value<std::string>()->default_value("VOC2012.txt"), "file name in which class names are listed")
 		("class_num", po::value<size_t>()->default_value(20), "total classes")
@@ -155,14 +162,17 @@ int main(int argc, const char* argv[])
 	Set_Model_Params(vm, model, "YOLOv1");
 
 	std::vector<std::string> class_names;
-	load_class_names(vm["data_root"].as<std::string>(), vm["class_list"].as <std::string>(), class_names);
+	read_lines_from_file(vm["data_root"].as<std::string>() + "\\" + vm["class_list"].as <std::string>(), class_names);
 
 	if (vm["train"].as<bool>())
 	{
 		LOG(INFO) << "Set Train options....";
 		Set_Options(vm, argc, argv, args, "train");
 
+		train(vm, device, model, transformBB, transformI, class_names);
 	}
+
+
 
 	::google::ShutdownGoogleLogging();
 	system("PAUSE");
@@ -239,5 +249,58 @@ void Set_Options(po::variables_map& vm, int argc, const char* argv[], po::option
 
 	// End Processing
 	return;
+
+}
+
+void train(po::variables_map& vm, torch::Device& device, YOLOv1& model, std::vector<transforms_Compose>& transformBB,
+	std::vector<transforms_Compose>& transformI, const std::vector<std::string> class_names)
+{
+	constexpr bool train_shuffle = true;  // whether to shuffle the training dataset
+	constexpr size_t train_workers = 4;  // the number of workers to retrieve data from the training dataset
+	constexpr bool valid_shuffle = true;  // whether to shuffle the validation dataset
+	constexpr size_t valid_workers = 4;  // the number of workers to retrieve data from the validation dataset
+	constexpr size_t save_sample_iter = 50;  // the frequency of iteration to save sample images
+	constexpr std::string_view extension = "jpg";  // the extension of file name to save sample images
+	constexpr std::pair<float, float> output_range = { 0.0, 1.0 };  // range of the value in output images
+
+	//-------------------------------------------
+	//  (1) Initialization and Declaration
+	//-------------------------------------------
+	size_t epoch, iter;
+	size_t total_iter;
+	size_t start_epoch, total_epoch;
+
+	float loss_f, loss_coord_xy_f, loss_coord_wh_f, loss_obj_f, loss_noobj_f, loss_class_f;
+	float lr_init, lr_base, lr_decay1, lr_decay2;		// learn ratio
+	std::string data, data_out;
+	std::string buff, latest;
+	std::string checkpoint_dir, save_image_dir, path;
+	std::string input_dir, output_dir;
+	std::string valid_input_dir, valid_output_dir;
+	std::stringstream ss;
+	std::ifstream infoi;
+	std::ofstream ofs, init, infoo;
+	std::tuple<torch::Tensor, std::vector<std::tuple<torch::Tensor, torch::Tensor>>, std::vector<std::string>,
+		std::vector<std::string>> mini_batch;
+
+	torch::Tensor loss, image, output;
+	torch::Tensor loss_coord_xy, loss_coord_wh, loss_obj, loss_noobj, loss_class;
+	cv::Mat sample;
+
+	std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor> losses;
+	std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> detect_result;
+	std::vector<std::tuple<torch::Tensor, torch::Tensor>> label;
+
+	std::vector<transforms_Compose> null;
+	
+
+	
+	//-----------------------------------------
+	// Preparation
+	//-----------------------------------------
+	DataLoader::VOCDataLoader dataloader(vm["data_root"].as<std::string>(), DataLoader::VOCDataLoader::VOC_2012, 
+										DataLoader::VOCDataLoader::_TRAIN_);
+
+
 
 }

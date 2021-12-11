@@ -6,29 +6,22 @@
 #include <glog/logging.h>
 
 
-bool load_class_names(std::string root, std::string filename, std::vector<std::string>& classnames)
+bool read_lines_from_file(std::string filepathname, std::vector<std::string>& datas, bool appendflag /*= false*/)
 {
-	std::filesystem::path filepath(root);
-	filepath.append(filename);
-	if (!std::filesystem::exists(filepath))
+	if (false == appendflag)
 	{
-		LOG(ERROR) << "file: " << filepath.string() << " not exists";
-		return false;
+		datas.clear();
 	}
 
-	std::ifstream infile(filepath.string());
+	std::ifstream infile(filepathname);
 	std::string readline;
+	int read_count = 0;
 	while (std::getline(infile, readline))
 	{
-		classnames.push_back(readline);
+		read_count++;
+		datas.push_back(readline);
 	}
-	std::cout << "load class names:" << std::endl;
-	for (size_t i = 0; i < classnames.size(); i++)
-	{
-		std::cout << classnames.at(i) << " ";
-	}
-	std::cout << "| total " << classnames.size() <<  std::endl;
-
+	LOG(INFO) << "Read " << read_count << " lines from file: " << filepathname;
 	infile.close();
 	return true;
 }

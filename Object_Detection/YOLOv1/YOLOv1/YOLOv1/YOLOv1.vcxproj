@@ -62,12 +62,14 @@
     <ClCompile Include="networks.cpp" />
     <ClCompile Include="transforms.cpp" />
     <ClCompile Include="utils.cpp" />
+    <ClCompile Include="vocdataloader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="augmentation.hpp" />
     <ClInclude Include="networks.hpp" />
     <ClInclude Include="transforms.hpp" />
     <ClInclude Include="utils.h" />
+    <ClInclude Include="vocdataloader.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
