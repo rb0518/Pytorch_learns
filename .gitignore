@@ -44,3 +44,4 @@ windows/*
 *.ipch
 
 checkpoints/
+__pycache__/

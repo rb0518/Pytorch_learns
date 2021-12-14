@@ -6,7 +6,9 @@
 #include <glog/logging.h>
 
 DataLoader::VOCDataLoader::VOCDataLoader(std::string root, VOC_DATA_TYPE datatype, RUN_MODE runmode, 
-	bool need_create_voc_label/* = true*/) : root_(root), data_type_(datatype), run_mode_()
+	std::vector<transforms_Compose>& transformBB, std::vector<transforms_Compose>& transformI,
+	bool need_create_voc_label/* = true*/) : root_(root), data_type_(datatype), run_mode_(),
+	transformBB_(transformBB), transformI_(transformI)
 {
 	classnames_filename_ = std::filesystem::path(root).append("clasnames.txt").string();
 	std::filesystem::path dirtemp(root);
@@ -153,3 +155,141 @@ void DataLoader::VOCDataLoader::convert_annotation(std::string annot_path, std::
 		return;
 	}
  }
+
+
+#include <opencv2/opencv.hpp>
+void  DataLoader::VOCDataLoader::load(const size_t index, std::tuple<torch::Tensor,
+	std::tuple<torch::Tensor, torch::Tensor>,
+	std::string, std::string>& data)
+{
+	// 1 load image from file
+	cv::Mat image_Mat_BGR, image_Mat_RGB;
+	std::string imagefilename = images_path_ + "//" + filenames_[index] + ".jpg";
+	image_Mat_BGR = cv::imread(imagefilename, cv::IMREAD_COLOR);
+	cv::cvtColor(image_Mat_BGR, image_Mat_RGB, cv::COLOR_BGR2RGB);
+
+	int imagewidth = image_Mat_RGB.cols;
+	int imageheight = image_Mat_RGB.rows;
+
+	// 2 load bbox and class_id from vector samples_
+	float bbox_cx, bbox_cy;				// bbox 中心点坐标
+	float bbox_width, bbox_height;		// bbox 宽、高
+
+	float objectid;
+
+	torch::Tensor id, cx, cy, w, h, coord;
+	torch::Tensor ids, coords;
+	std::tuple<torch::Tensor, torch::Tensor> BBoxs;
+
+	int num_bbox = samples_[index].labels.size();		
+	for (int i = 0; i < num_bbox; i++)
+	{
+		float x1 = float(samples_[index].bboxes[i][0]);
+		float y1 = float(samples_[index].bboxes[i][1]);
+		float x2 = float(samples_[index].bboxes[i][2]);
+		float y2 = float(samples_[index].bboxes[i][3]);
+
+		bbox_cx = (x1 + x2) / 2;
+		bbox_cy = (y1 + y2) / 2;
+		bbox_width = x2 - x1;
+		bbox_height = y2 - y1;
+
+		objectid = float(samples_[index].labels[i]);
+
+		id = torch::full({ 1, 1 }, objectid, torch::TensorOptions().dtype(torch::kFloat));
+		cx = torch::full({ 1, 1 }, bbox_cx, torch::TensorOptions().dtype(torch::kFloat));
+		cy = torch::full({ 1,1 }, bbox_cy, torch::TensorOptions().dtype(torch::kFloat));
+		w = torch::full({ 1, 1 }, bbox_width, torch::TensorOptions().dtype(torch::kFloat));
+		h = torch::full({ 1,1 }, bbox_height, torch::TensorOptions().dtype(torch::kFloat));
+		coord = torch::cat({ cx, cy, w, h }, 1);
+
+		if (i == 0)
+		{
+			ids = id;
+			coords = coord;
+		}
+		else
+		{
+			ids = torch::cat({ ids, id }, 0);
+			coords = torch::cat({ coords, coord }, 0);
+		}
+	}
+
+	if (ids.numel() > 0)
+	{
+		ids = ids.contiguous().detach().clone();
+		coords = coords.contiguous().detach().clone();
+	}
+
+	BBoxs = { ids, coords };
+
+	cv::Mat image_Mat_mid;
+	std::tuple<torch::Tensor, torch::Tensor> BBs_mid;
+	for (size_t i = 0; i < transformBB_.size(); i++)
+	{
+		this->deepcopy(image_Mat_RGB, BBoxs, image_Mat_mid, BBs_mid);
+		this->transformBB_.at(i)->forward(image_Mat_mid, BBs_mid, image_Mat_RGB, BBoxs);
+	}
+
+	torch::Tensor image = transforms::apply(transformI_, image_Mat_RGB);
+
+	data = { image.detach().clone(), BBoxs, filenames_[index], filenames_[index] };
+}
+
+bool DataLoader::VOCDataLoader::loadbatch(const size_t startindex, const size_t batchsize, std::tuple<torch::Tensor,
+	std::vector<std::tuple<torch::Tensor, torch::Tensor>>,
+	std::vector<std::string>, std::vector<std::string>>& batchdata)
+{
+	if (samples_.size() < (startindex + batchsize))
+		return false;
+
+	torch::Tensor data1, tensor1;
+	std::vector<std::tuple<torch::Tensor, torch::Tensor>> data2;
+	std::vector<std::string> data3, data4;
+	std::tuple<torch::Tensor, std::tuple<torch::Tensor, torch::Tensor>, std::string, std::string> *batchdata_temp;
+
+	CHECK(batchsize >= 2) << "batch size must more than 1";
+	batchdata_temp = new std::tuple<torch::Tensor, std::tuple<torch::Tensor, torch::Tensor>, std::string, std::string>[batchsize];
+	CHECK(nullptr != batchdata_temp) << "allocate memory error!";
+	
+	CHECK(samples_.size() > 0) << "samples.size == 0";
+
+	for (int i = 0; i < batchsize; i++)
+	{
+		load(i % samples_.size(), batchdata_temp[i]);
+	}
+
+	data1 = std::get<0>(batchdata_temp[0]);
+	data1 = torch::unsqueeze(data1, 0);
+	data2.push_back(std::get<1>(batchdata_temp[0]));
+	data3.push_back(std::get<2>(batchdata_temp[0]));
+	data4.push_back(std::get<3>(batchdata_temp[0]));
+	for (int i = 1; i < batchsize; i++)
+	{
+		tensor1 = std::get<0>(batchdata_temp[i]);
+		tensor1 = torch::unsqueeze(tensor1, 0);
+		data1 = torch::cat({ data1, tensor1 }, 0);
+		data2.push_back(std::get<1>(batchdata_temp[i]));
+		data2.push_back(std::get<1>(batchdata_temp[i]));
+		data2.push_back(std::get<1>(batchdata_temp[i]));
+	}
+	data1 = data1.contiguous().detach().clone();
+	batchdata = { data1, data2, data3, data4 };
+	delete[] batchdata_temp;
+
+	return true;
+}
+
+
+void DataLoader::VOCDataLoader::deepcopy(cv::Mat& data_in1, std::tuple<torch::Tensor, torch::Tensor>& data_in2, 
+			cv::Mat& data_out1, std::tuple<torch::Tensor, torch::Tensor>& data_out2) 
+{
+	data_in1.copyTo(data_out1);
+	if (std::get<0>(data_in2).numel() > 0) {
+		data_out2 = { std::get<0>(data_in2).clone(), std::get<1>(data_in2).clone() };
+	}
+	else {
+		data_out2 = { torch::Tensor(), torch::Tensor() };
+	}
+	return;
+}

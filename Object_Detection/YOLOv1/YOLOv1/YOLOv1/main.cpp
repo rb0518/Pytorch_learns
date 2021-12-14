@@ -15,6 +15,7 @@
 #include "networks.hpp"
 
 #include "vocdataloader.hpp"
+#include "loss.hpp"
 
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
@@ -24,7 +25,6 @@ template <typename T> void Set_Model_Params(po::variables_map& vm, T& model, con
 
 void train(po::variables_map& vm, torch::Device& device, YOLOv1& model, std::vector<transforms_Compose>& transformBB,
 	std::vector<transforms_Compose>& transformI, const std::vector<std::string> class_names);
-
 
 
 po::options_description parse_argument() {
@@ -269,6 +269,7 @@ void train(po::variables_map& vm, torch::Device& device, YOLOv1& model, std::vec
 	size_t epoch, iter;
 	size_t total_iter;
 	size_t start_epoch, total_epoch;
+	size_t batch_size;
 
 	float loss_f, loss_coord_xy_f, loss_coord_wh_f, loss_obj_f, loss_noobj_f, loss_class_f;
 	float lr_init, lr_base, lr_decay1, lr_decay2;		// learn ratio
@@ -299,8 +300,60 @@ void train(po::variables_map& vm, torch::Device& device, YOLOv1& model, std::vec
 	// Preparation
 	//-----------------------------------------
 	DataLoader::VOCDataLoader dataloader(vm["data_root"].as<std::string>(), DataLoader::VOCDataLoader::VOC_2012, 
-										DataLoader::VOCDataLoader::_TRAIN_);
+										DataLoader::VOCDataLoader::_TRAIN_,
+										transformBB, transformI);
 
+	// Set Optimizer Method
+	auto optimzer = torch::optim::SGD(model->parameters(), 
+		torch::optim::SGDOptions(vm["lr_init"].as<float>()).momentum(vm["momentum"].as<float>()).weight_decay(vm["weight_decay"].as<float>()));
 
+	// Set Loss Function
+	auto criterion = Loss((long int)vm["class_num"].as<size_t>(), (long int)vm["num_grid"].as<size_t>(), (long int)vm["num_bbox"].as<size_t>());
 
+	total_epoch = vm["epochs"].as<size_t>();
+	lr_init = vm["lr_init"].as<float>();		// learn ratio init parameter.
+	lr_base = vm["lr_base"].as<float>();
+	lr_decay1 = vm["lr_decay1"].as<float>();
+	lr_decay2 = vm["lr_decay2"].as<float>();
+
+	batch_size = vm["batch_size"].as<size_t>();
+	for (epoch = start_epoch; epoch <= total_epoch; epoch++)
+	{
+		model->train();
+		LOG(INFO) << "epoch: " << epoch << " / " << total_epoch;
+		size_t samplecount = dataloader.get_samples_count();
+		size_t startindex = 0;
+		while (dataloader.loadbatch(startindex, batch_size, mini_batch))
+		{
+			float lr;
+
+			if (epoch == 1) {
+				lr = lr_init/* + (lr_base - lr_init) * std::pow(burnin_base, burnin_exp)*/;
+			}
+			else if (epoch == 2) {
+				lr = lr_base;
+			}
+			else if (epoch == 76) {
+				lr = lr_decay1;
+			}
+			else if (epoch == 106) {
+				lr = lr_decay2;
+			}
+			else {
+				return;
+			}
+
+			for (auto& param_group : optimzer.param_groups()) {
+				if (param_group.has_options()) {
+					auto& options = (torch::optim::SGDOptions&)(param_group.options());
+					options.lr(lr);
+				}
+			}
+
+			image = std::get<0>(mini_batch).to(device);		// N,C,H,W
+			label = std::get<1>(mini_batch);
+			output = model->forward(image);
+		}
+	}
 }
+
