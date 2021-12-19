@@ -2,21 +2,19 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class Squeeze(nn.Module):
-    def __init__(self):
-        super(Squeeze, self).__init__()
+from util_layers import Squeeze
 
-    def forward(self, x):
-        return x.squeeze()
 
 class DarkNet(nn.Module):
-    def __init__(self, conv_only = False, bn = True, init_weight = True):
+    def __init__(self, conv_only=False, bn=True, init_weight=True):
         super(DarkNet, self).__init__()
 
+        # Make layers
         self.features = self._make_conv_bn_layers() if bn else self._make_conv_layers()
         if not conv_only:
             self.fc = self._make_fc_layers()
 
+        # Initialize weights
         if init_weight:
             self._initialize_weights()
 
@@ -27,10 +25,10 @@ class DarkNet(nn.Module):
         if not self.conv_only:
             x = self.fc(x)
         return x
-    
+
     def _make_conv_bn_layers(self):
         conv = nn.Sequential(
-                nn.Conv2d(3, 64, 7, stride=2, padding=3),
+            nn.Conv2d(3, 64, 7, stride=2, padding=3),
             nn.BatchNorm2d(64),
             nn.LeakyReLU(0.1, inplace=True),
             nn.MaxPool2d(2),
@@ -97,10 +95,10 @@ class DarkNet(nn.Module):
             nn.LeakyReLU(0.1, inplace=True),
             nn.Conv2d(512, 1024, 3, padding=1),
             nn.BatchNorm2d(1024),
-            nn.LeakyReLU(0.1, inplace=True)        
+            nn.LeakyReLU(0.1, inplace=True)
         )
         return conv
-    
+
     def _make_conv_layers(self):
         conv = nn.Sequential(
             nn.Conv2d(3, 64, 7, stride=2, padding=3),

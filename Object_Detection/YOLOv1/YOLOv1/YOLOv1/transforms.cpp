@@ -72,17 +72,17 @@ transforms::Normalize1dImpl::Normalize1dImpl(const float mean_, const float std_
 
 transforms::Normalize1dImpl::Normalize1dImpl(const float mean_, const std::vector<float> std_) {
 	this->mean = torch::from_blob((float*)&mean_, { 1 }, torch::kFloat).clone();  // mean{1}
-	this->std = torch::from_blob((float*)std_.data(), { (long int)std_.size() }, torch::kFloat).clone();  // std{D}
+	this->std = torch::from_blob((float*)std_.data(), { (int64_t)std_.size() }, torch::kFloat).clone();  // std{D}
 }
 
 transforms::Normalize1dImpl::Normalize1dImpl(const std::vector<float> mean_, const float std_) {
-	this->mean = torch::from_blob((float*)mean_.data(), { (long int)mean_.size() }, torch::kFloat).clone();  // mean{D}
+	this->mean = torch::from_blob((float*)mean_.data(), { (int64_t)mean_.size() }, torch::kFloat).clone();  // mean{D}
 	this->std = torch::from_blob((float*)&std_, { 1 }, torch::kFloat).clone();  // std{1}
 }
 
 transforms::Normalize1dImpl::Normalize1dImpl(const std::vector<float> mean_, const std::vector<float> std_) {
-	this->mean = torch::from_blob((float*)mean_.data(), { (long int)mean_.size() }, torch::kFloat).clone();  // mean{D}
-	this->std = torch::from_blob((float*)std_.data(), { (long int)std_.size() }, torch::kFloat).clone();  // std{D}
+	this->mean = torch::from_blob((float*)mean_.data(), { (int64_t)mean_.size() }, torch::kFloat).clone();  // mean{D}
+	this->std = torch::from_blob((float*)std_.data(), { (int64_t)std_.size() }, torch::kFloat).clone();  // std{D}
 }
 
 
@@ -91,7 +91,7 @@ transforms::Normalize1dImpl::Normalize1dImpl(const std::vector<float> mean_, con
 // -----------------------------------------------------------------------------------
 void transforms::Normalize1dImpl::forward(torch::Tensor& data_in, torch::Tensor& data_out) {
 
-	long int dim = data_in.size(0);
+	int64_t dim = data_in.size(0);
 
 	torch::Tensor meanF = this->mean;
 	if (dim < meanF.size(0)) {
@@ -212,7 +212,7 @@ void transforms::ToTensorImpl::forward(cv::Mat& data_in, torch::Tensor& data_out
 // namespace{transforms} -> class{ToTensorLabelImpl}(ComposeImpl) -> function{forward}
 // ------------------------------------------------------------------------------------
 void transforms::ToTensorLabelImpl::forward(cv::Mat& data_in, torch::Tensor& data_out) {
-	torch::Tensor data_out_src = torch::from_blob(data_in.data, { data_in.rows, data_in.cols, data_in.channels() }, torch::kInt).to(torch::kLong);  // {0,1,2} = {H,W,C}
+	torch::Tensor data_out_src = torch::from_blob(data_in.data, { data_in.rows, data_in.cols, data_in.channels() }, torch::kInt).to(torch::kInt64);  // {0,1,2} = {H,W,C}
 	data_out_src = data_out_src.permute({ 2, 0, 1 });  // {0,1,2} = {H,W,C} ===> {0,1,2} = {C,H,W}
 	data_out_src = torch::squeeze(data_out_src, /*dim=*/0);  // {C,H,W} ===> {H,W}
 	data_out = data_out_src.contiguous().detach().clone();
@@ -234,9 +234,9 @@ transforms::AddRVINoiseImpl::AddRVINoiseImpl(const float occur_prob_, const std:
 // ----------------------------------------------------------------------------------
 void transforms::AddRVINoiseImpl::forward(torch::Tensor& data_in, torch::Tensor& data_out) {
 
-	long int width = data_in.size(2);
-	long int height = data_in.size(1);
-	long int channels = data_in.size(0);
+	int64_t width = data_in.size(2);
+	int64_t height = data_in.size(1);
+	int64_t channels = data_in.size(0);
 
 	torch::Tensor randu = torch::rand({ 1, height, width }).to(data_in.device());
 	torch::Tensor noise_flag = (randu < this->occur_prob).to(torch::kFloat).expand({ channels, height, width });
@@ -265,9 +265,9 @@ transforms::AddSPNoiseImpl::AddSPNoiseImpl(const float occur_prob_, const float 
 // ---------------------------------------------------------------------------------
 void transforms::AddSPNoiseImpl::forward(torch::Tensor& data_in, torch::Tensor& data_out) {
 
-	long int width = data_in.size(2);
-	long int height = data_in.size(1);
-	long int channels = data_in.size(0);
+	int64_t width = data_in.size(2);
+	int64_t height = data_in.size(1);
+	int64_t channels = data_in.size(0);
 
 	torch::Tensor randu = torch::rand({ 1, height, width }).to(data_in.device());
 	torch::Tensor noise_flag = (randu < this->occur_prob).to(torch::kFloat).expand({ channels, height, width });
@@ -300,9 +300,9 @@ transforms::AddGaussNoiseImpl::AddGaussNoiseImpl(const float occur_prob_, const 
 // ------------------------------------------------------------------------------------
 void transforms::AddGaussNoiseImpl::forward(torch::Tensor& data_in, torch::Tensor& data_out) {
 
-	long int width = data_in.size(2);
-	long int height = data_in.size(1);
-	long int channels = data_in.size(0);
+	int64_t width = data_in.size(2);
+	int64_t height = data_in.size(1);
+	int64_t channels = data_in.size(0);
 
 	torch::Tensor randu = torch::rand({ 1, height, width }).to(data_in.device());
 	torch::Tensor noise_flag = (randu < this->occur_prob).to(torch::kFloat).expand({ channels, height, width });
@@ -325,17 +325,17 @@ transforms::NormalizeImpl::NormalizeImpl(const float mean_, const float std_) {
 
 transforms::NormalizeImpl::NormalizeImpl(const float mean_, const std::vector<float> std_) {
 	this->mean = torch::from_blob((float*)&mean_, { 1, 1, 1 }, torch::kFloat).clone();  // mean{1,1,1}
-	this->std = torch::from_blob((float*)std_.data(), { (long int)std_.size(), 1, 1 }, torch::kFloat).clone();  // std{C,1,1}
+	this->std = torch::from_blob((float*)std_.data(), { (int64_t)std_.size(), 1, 1 }, torch::kFloat).clone();  // std{C,1,1}
 }
 
 transforms::NormalizeImpl::NormalizeImpl(const std::vector<float> mean_, const float std_) {
-	this->mean = torch::from_blob((float*)mean_.data(), { (long int)mean_.size(), 1, 1 }, torch::kFloat).clone();  // mean{C,1,1}
+	this->mean = torch::from_blob((float*)mean_.data(), { (int64_t)mean_.size(), 1, 1 }, torch::kFloat).clone();  // mean{C,1,1}
 	this->std = torch::from_blob((float*)&std_, { 1, 1, 1 }, torch::kFloat).clone();  // std{1,1,1}
 }
 
 transforms::NormalizeImpl::NormalizeImpl(const std::vector<float> mean_, const std::vector<float> std_) {
-	this->mean = torch::from_blob((float*)mean_.data(), { (long int)mean_.size(), 1, 1 }, torch::kFloat).clone();  // mean{C,1,1}
-	this->std = torch::from_blob((float*)std_.data(), { (long int)std_.size(), 1, 1 }, torch::kFloat).clone();  // std{C,1,1}
+	this->mean = torch::from_blob((float*)mean_.data(), { (int64_t)mean_.size(), 1, 1 }, torch::kFloat).clone();  // mean{C,1,1}
+	this->std = torch::from_blob((float*)std_.data(), { (int64_t)std_.size(), 1, 1 }, torch::kFloat).clone();  // std{C,1,1}
 }
 
 
@@ -344,7 +344,7 @@ transforms::NormalizeImpl::NormalizeImpl(const std::vector<float> mean_, const s
 // --------------------------------------------------------------------------------
 void transforms::NormalizeImpl::forward(torch::Tensor& data_in, torch::Tensor& data_out) {
 
-	long int channels = data_in.size(0);
+	int64_t channels = data_in.size(0);
 
 	torch::Tensor meanF = this->mean;
 	if (channels < meanF.size(0)) {

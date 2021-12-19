@@ -39,7 +39,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>D:\thirdparty142\opencv\include;D:\thirdparty142\boost\include;D:\libtorch\include\torch\csrc\api\include;D:\libtorch\include;D:\thirdparty142\gflags\include;D:\thirdparty142\glog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -61,6 +61,7 @@
     <ClCompile Include="loss.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="networks.cpp" />
+    <ClCompile Include="progress.cpp" />
     <ClCompile Include="transforms.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="vocdataloader.cpp" />
@@ -69,6 +70,7 @@
     <ClInclude Include="augmentation.hpp" />
     <ClInclude Include="loss.hpp" />
     <ClInclude Include="networks.hpp" />
+    <ClInclude Include="progress.hpp" />
     <ClInclude Include="transforms.hpp" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="vocdataloader.hpp" />

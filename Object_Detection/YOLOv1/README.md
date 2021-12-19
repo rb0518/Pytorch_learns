@@ -10,3 +10,5 @@ The PASCAL Visual Object Classes Challenge 2007 (VOC2007) and 2012(VOC2012) [off
 
 ## Code reference
 [koba-jon](https://github.com/koba-jon/pytorch_cpp)
+
+long int  ==> Tensor  LINK error, use `int64_t` alternate the `long int`

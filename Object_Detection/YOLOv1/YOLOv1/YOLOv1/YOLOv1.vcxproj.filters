@@ -36,6 +36,9 @@
     <ClCompile Include="loss.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="progress.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils.h">
@@ -54,6 +57,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="loss.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="progress.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

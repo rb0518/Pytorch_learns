@@ -107,6 +107,7 @@ void DataLoader::VOCDataLoader::create_voc_labels(bool create_voc_file)
 	{
 		of.close();
 	}
+	LOG(INFO) << "create voc labels finish.";
 }
 
 #include <boost/property_tree/ptree.hpp>
@@ -175,7 +176,7 @@ void  DataLoader::VOCDataLoader::load(const size_t index, std::tuple<torch::Tens
 	float bbox_cx, bbox_cy;				// bbox 中心点坐标
 	float bbox_width, bbox_height;		// bbox 宽、高
 
-	float objectid;
+	int64_t objectid;
 
 	torch::Tensor id, cx, cy, w, h, coord;
 	torch::Tensor ids, coords;
@@ -194,9 +195,9 @@ void  DataLoader::VOCDataLoader::load(const size_t index, std::tuple<torch::Tens
 		bbox_width = x2 - x1;
 		bbox_height = y2 - y1;
 
-		objectid = float(samples_[index].labels[i]);
+		objectid = int64_t(samples_[index].labels[i]);
 
-		id = torch::full({ 1, 1 }, objectid, torch::TensorOptions().dtype(torch::kFloat));
+		id = torch::full({ 1 }, objectid, torch::TensorOptions().dtype(torch::kInt64));
 		cx = torch::full({ 1, 1 }, bbox_cx, torch::TensorOptions().dtype(torch::kFloat));
 		cy = torch::full({ 1,1 }, bbox_cy, torch::TensorOptions().dtype(torch::kFloat));
 		w = torch::full({ 1, 1 }, bbox_width, torch::TensorOptions().dtype(torch::kFloat));

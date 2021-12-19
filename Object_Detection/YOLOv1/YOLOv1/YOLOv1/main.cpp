@@ -17,14 +17,22 @@
 #include "vocdataloader.hpp"
 #include "loss.hpp"
 
+#include "progress.hpp"
+
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
+
+using Optimizer = torch::optim::SGD;
+using OptimizerOptions = torch::optim::SGDOptions;
+
 
 void Set_Options(po::variables_map& vm, int argc, const char* argv[], po::options_description& args, const std::string mode);
 template <typename T> void Set_Model_Params(po::variables_map& vm, T& model, const std::string name);
 
 void train(po::variables_map& vm, torch::Device& device, YOLOv1& model, std::vector<transforms_Compose>& transformBB,
 	std::vector<transforms_Compose>& transformI, const std::vector<std::string> class_names);
+template <typename Optimizer, typename OptimizerOptions> void Update_LR(Optimizer& optimizer, const float lr_init, const float lr_base, 
+		const float lr_decay1, const float lr_decay2, const size_t epoch, const float burnin_base, const float burnin_exp = 4.0);
 
 
 po::options_description parse_argument() {
@@ -53,7 +61,7 @@ po::options_description parse_argument() {
 		("train_in_dir", po::value<std::string>()->default_value("trainI"), "training input image directory : ./datasets/<dataset>/<train_in_dir>/<image files>")
 		("train_out_dir", po::value<std::string>()->default_value("trainO"), "training output image directory : ./datasets/<dataset>/<train_out_dir>/<annotation files>")
 		("epochs", po::value<size_t>()->default_value(200), "training total epoch")
-		("batch_size", po::value<size_t>()->default_value(32), "training batch size")
+		("batch_size", po::value<size_t>()->default_value(2), "training batch size")
 		("train_load_epoch", po::value<std::string>()->default_value(""), "epoch of model to resume learning")
 		("save_epoch", po::value<size_t>()->default_value(20), "frequency of epoch to save model and optimizer")
 		/*************************** Data Augmentation ***************************/
@@ -67,6 +75,19 @@ po::options_description parse_argument() {
 		("saturation_rate", po::value<double>()->default_value(0.5), "frequency to change saturation")
 		("shift_rate", po::value<double>()->default_value(0.5), "frequency to shift")
 		("crop_rate", po::value<double>()->default_value(0.5), "frequency to crop")
+
+		// (7) Define for Network Parameter
+		("lr_init", po::value<float>()->default_value(1e-3), "learning rate in the initial iteration")
+		("lr_base", po::value<float>()->default_value(1e-2), "learning rate in the base iteration")
+		("lr_decay1", po::value<float>()->default_value(1e-3), "learning rate in the decay 1 iteration")
+		("lr_decay2", po::value<float>()->default_value(1e-4), "learning rate in the decay 2 iteration")
+		("momentum", po::value<float>()->default_value(0.9), "momentum in SGD of optimizer method")
+		("weight_decay", po::value<float>()->default_value(5e-4), "weight decay in SGD of optimizer method")
+		("Lambda_coord", po::value<float>()->default_value(5.0), "the multiple of coordinate term")
+		("Lambda_object", po::value<float>()->default_value(1.0), "the multiple of object confidence term")
+		("Lambda_noobject", po::value<float>()->default_value(0.5), "the multiple of no object confidence term")
+		("Lambda_class", po::value<float>()->default_value(1.0), "the multiple of class term")
+
 
 	// End Processing
 	;
@@ -295,6 +316,9 @@ void train(po::variables_map& vm, torch::Device& device, YOLOv1& model, std::vec
 	std::vector<transforms_Compose> null;
 	
 
+	progress::display* show_progress;
+	progress::irregular irreg_progress;
+
 	
 	//-----------------------------------------
 	// Preparation
@@ -308,8 +332,9 @@ void train(po::variables_map& vm, torch::Device& device, YOLOv1& model, std::vec
 		torch::optim::SGDOptions(vm["lr_init"].as<float>()).momentum(vm["momentum"].as<float>()).weight_decay(vm["weight_decay"].as<float>()));
 
 	// Set Loss Function
-	auto criterion = Loss((long int)vm["class_num"].as<size_t>(), (long int)vm["num_grid"].as<size_t>(), (long int)vm["num_bbox"].as<size_t>());
+	auto criterion = Loss((int64_t)vm["class_num"].as<size_t>(), (int64_t)vm["num_grid"].as<size_t>(), (int64_t)vm["num_bbox"].as<size_t>());
 
+	total_iter = dataloader.get_samples_count();
 	total_epoch = vm["epochs"].as<size_t>();
 	lr_init = vm["lr_init"].as<float>();		// learn ratio init parameter.
 	lr_base = vm["lr_base"].as<float>();
@@ -317,43 +342,127 @@ void train(po::variables_map& vm, torch::Device& device, YOLOv1& model, std::vec
 	lr_decay2 = vm["lr_decay2"].as<float>();
 
 	batch_size = vm["batch_size"].as<size_t>();
-	for (epoch = start_epoch; epoch <= total_epoch; epoch++)
+	start_epoch = 0;
+
+	irreg_progress.restart(start_epoch, total_epoch);
+	for (epoch = 0; epoch < total_epoch; epoch++)
 	{
 		model->train();
 		LOG(INFO) << "epoch: " << epoch << " / " << total_epoch;
 		size_t samplecount = dataloader.get_samples_count();
 		size_t startindex = 0;
+		show_progress = new progress::display(/*count_max_=*/total_iter, /*epoch=*/{ epoch, total_epoch }, /*loss_=*/{ "coord_xy", "coord_wh", "conf_o", "conf_x", "class" });
+
+
 		while (dataloader.loadbatch(startindex, batch_size, mini_batch))
 		{
-			float lr;
+//			LOG(INFO) << "startindex: " << startindex << "  batch size: " << batch_size << " count: " << samplecount;
+			// Update Learning Rate
+			Update_LR<Optimizer, OptimizerOptions>(optimzer, lr_init, lr_base, lr_decay1, lr_decay2, epoch, 1.0, 1.0);
+		
 
-			if (epoch == 1) {
-				lr = lr_init/* + (lr_base - lr_init) * std::pow(burnin_base, burnin_exp)*/;
-			}
-			else if (epoch == 2) {
-				lr = lr_base;
-			}
-			else if (epoch == 76) {
-				lr = lr_decay1;
-			}
-			else if (epoch == 106) {
-				lr = lr_decay2;
-			}
-			else {
-				return;
-			}
-
-			for (auto& param_group : optimzer.param_groups()) {
-				if (param_group.has_options()) {
-					auto& options = (torch::optim::SGDOptions&)(param_group.options());
-					options.lr(lr);
-				}
-			}
-
+			// YOLOv1 Training Phase
 			image = std::get<0>(mini_batch).to(device);		// N,C,H,W
 			label = std::get<1>(mini_batch);
 			output = model->forward(image);
+
+//			losses = criterion(output, label);
+// 			loss_coord_xy = std::get<0>(losses) * vm["Lambda_coord"].as<float>();
+// 			loss_coord_wh = std::get<1>(losses) * vm["Lambda_coord"].as<float>();
+// 			loss_obj = std::get<2>(losses) * vm["Lambda_object"].as<float>();
+// 			loss_noobj = std::get<3>(losses) * vm["Lambda_noobject"].as<float>();
+// 			loss_class = std::get<4>(losses) * vm["Lambda_class"].as<float>();
+
+			loss = loss_coord_xy + loss_coord_wh + loss_obj + loss_noobj + loss_class;
+			optimzer.zero_grad();
+/*			loss.backward();*/
+			optimzer.step();
+
+			// -----------------------------------
+			// c3. Record Loss (iteration)
+			// -----------------------------------
+			show_progress->increment(/*loss_value=*/{ loss_coord_xy.item<float>(), loss_coord_wh.item<float>(), 
+											loss_obj.item<float>(), loss_noobj.item<float>(), loss_class.item<float>() });
+		
+// 			ofs << "iters:" << show_progress->get_iters() << '/' << total_iter << ' ' << std::flush;
+// 			ofs << "coord_xy:" << loss_coord_xy.item<float>() << "(ave:" << show_progress->get_ave(0) << ") " << std::flush;
+// 			ofs << "coord_wh:" << loss_coord_wh.item<float>() << "(ave:" << show_progress->get_ave(1) << ") " << std::flush;
+// 			ofs << "conf_o:" << loss_obj.item<float>() << "(ave:" << show_progress->get_ave(2) << ") " << std::flush;
+// 			ofs << "conf_x:" << loss_noobj.item<float>() << "(ave:" << show_progress->get_ave(3) << ") " << std::flush;
+// 			ofs << "class:" << loss_class.item<float>() << "(ave:" << show_progress->get_ave(4) << ')' << std::endl;
+
+			// -----------------------------------
+			// c4. Save Sample Images
+			// -----------------------------------
+			iter = show_progress->get_iters();
+			if (iter % save_sample_iter == 1) 
+			{
+				ss.str(""); ss.clear(std::stringstream::goodbit);
+// 				ss << save_images_dir << "/epoch_" << epoch << "-iter_" << iter << '.' << extension;
+// 				detect_result = detector(output[0]);
+// 				sample = visualizer::draw_detections_des(image[0].detach(), { std::get<0>(detect_result), std::get<1>(detect_result) }, std::get<2>(detect_result), class_names, label_palette, /*range=*/output_range);
+// 				cv::imwrite(ss.str(), sample);
+			}
+		}
+
+		// -----------------------------------
+		// b2. Record Loss (epoch)
+		// -----------------------------------
+		loss_f = show_progress->get_ave(0) + show_progress->get_ave(1) + show_progress->get_ave(2) + show_progress->get_ave(3) + show_progress->get_ave(4);
+		loss_coord_xy_f = show_progress->get_ave(0);
+		loss_coord_wh_f = show_progress->get_ave(1);
+		loss_obj_f = show_progress->get_ave(2);
+		loss_noobj_f = show_progress->get_ave(3);
+		loss_class_f = show_progress->get_ave(4);
+
+		// -----------------------------------
+		// b6. Show Elapsed Time
+		// -----------------------------------
+		if (epoch % 10 == 0) {
+
+			// -----------------------------------
+			// c1. Get Output String
+			// -----------------------------------
+			ss.str(""); ss.clear(std::stringstream::goodbit);
+			irreg_progress.nab(epoch);
+			ss << "elapsed = " << irreg_progress.get_elap() << '(' << irreg_progress.get_sec_per() << "sec/epoch)   ";
+			ss << "remaining = " << irreg_progress.get_rem() << "   ";
+			ss << "now = " << irreg_progress.get_date() << "   ";
+			ss << "finish = " << irreg_progress.get_date_fin();
+			std::cout << ss.str() << std::endl;
+			//date_out = ss.str();
 		}
 	}
 }
 
+template <typename Optimizer, typename OptimizerOptions>
+void Update_LR(Optimizer& optimizer, const float lr_init, const float lr_base, const float lr_decay1, const float lr_decay2,
+	const size_t epoch, const float burnin_base, const float burnin_exp/* = 4.0*/)
+{
+	float lr;
+	if (epoch == 1) {
+		lr = lr_init/* + (lr_base - lr_init) * std::pow(burnin_base, burnin_exp)*/;
+	}
+	else if (epoch == 2) {
+		lr = lr_base;
+	}
+	else if (epoch == 76) {
+		lr = lr_decay1;
+	}
+	else if (epoch == 106) {
+		lr = lr_decay2;
+	}
+	else
+	{
+		return;
+	}
+
+	for (auto& param_group : optimizer.param_groups()) {
+		if (param_group.has_options()) {
+			auto& options = (torch::optim::SGDOptions&)(param_group.options());
+			options.lr(lr);
+		}
+	}
+
+	return;
+}

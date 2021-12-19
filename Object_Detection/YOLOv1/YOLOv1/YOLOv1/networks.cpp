@@ -8,8 +8,8 @@ YOLOv1Impl::YOLOv1Impl(po::variables_map& vm) {
 	size_t nc = vm["num_channels"].as<size_t>();  // the number of image channels
 	size_t nb = vm["num_bbox"].as<size_t>();  // the number of bounding box in each grid
 	size_t class_num = vm["class_num"].as<size_t>();  // total classes
-	this->grid = (long int)vm["num_grid"].as<size_t>();  // the number of grid
-	this->final_features = (long int)(class_num + nb * 5);  // total classes + BB * 5=len[center_x, center_y, width, height, confidence]
+	this->grid = (int64_t)vm["num_grid"].as<size_t>();  // the number of grid
+	this->final_features = (int64_t)(class_num + nb * 5);  // total classes + BB * 5=len[center_x, center_y, width, height, confidence]
 
 	// -----------------------------------
 	// 1. Convolutional Layers

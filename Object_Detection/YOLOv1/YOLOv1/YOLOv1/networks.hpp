@@ -17,7 +17,7 @@ void Convolution(nn::Sequential& sq, const size_t in_num_channels, const size_t 
 // -------------------------------------------------
 struct YOLOv1Impl : nn::Module {
 private:
-	long int grid, final_features;
+	int64_t grid, final_features;
 	nn::Sequential features, avgpool, classifier;
 public:
 	YOLOv1Impl() {}
