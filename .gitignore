@@ -45,3 +45,5 @@ windows/*
 
 checkpoints/
 __pycache__/
+
+data/
