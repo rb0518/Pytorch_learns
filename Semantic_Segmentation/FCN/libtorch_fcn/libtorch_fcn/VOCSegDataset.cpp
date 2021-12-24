@@ -90,7 +90,7 @@ cv::Mat RotateImage(cv::Mat src, float angle, float scale, int interpolation, in
 
 const int const_height = 720, const_weight = 960;
 //int batch_size = 1;
-//ÕâÀï¶Ôinput imageµÄ³ß´ç½øÐÐÁË²Ã¼ô²ÅÄÜÊÊºÏÍøÂç½á¹¹ÖÐ¼ä²ãµÄÊäÈëºÍÊä³ö
+//ï¿½ï¿½ï¿½ï¿½ï¿½input imageï¿½Ä³ß´ï¿½ï¿½ï¿½ï¿½ï¿½Ë²Ã¼ï¿½ï¿½ï¿½ï¿½ï¿½Êºï¿½ï¿½ï¿½ï¿½ï¿½á¹¹ï¿½Ð¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 const int train_h = int(const_height * 2 / 3);  //480
 const int train_w = int(const_weight * 2 / 3);  //640
 
@@ -128,38 +128,36 @@ VOCSegDataset::VOCSegDataset(std::string data_root, std::string run_mode, int64_
 
 torch::data::Example<> VOCSegDataset::get(size_t index)
 {
-	// image Ô­Ê¼Í¼Ïñ
-	// label ±êÇ©Í¼Ïñshape {height, weight}, ÏñËØÖµÎª¶ÔÓ¦µÄclassvalue
-	// target one-hotÀàÐÍShapeÎª{channel = 21<VOC2012µÄÀàÐÍÎª20£¬¼ÓÉÏ±³¾°Îª21, height, weight(0..1)}
+	// image Ô­Ê¼Í¼ï¿½ï¿½
+	// label ï¿½ï¿½Ç©Í¼ï¿½ï¿½shape {height, weight}, ï¿½ï¿½ï¿½ï¿½ÖµÎªï¿½ï¿½Ó¦ï¿½ï¿½classvalue
+	// target one-hotï¿½ï¿½ï¿½ï¿½ShapeÎª{channel = 21<VOC2012ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îª20ï¿½ï¿½ï¿½ï¿½ï¿½Ï±ï¿½ï¿½ï¿½Îª21, height, weight(0..1)}
 	std::string image_name = image_files_.at(index);
 	std::string label_name = label_files_.at(index);
 	LOG(INFO) << "index: " << index << " image: " << image_name << "label: " << label_name;
 
-	cv::Mat img = cv::imread(image_name);		// Í¼ÏñÊý¾ÝÎªBGR
+	cv::Mat img = cv::imread(image_name);		// Í¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÎªBGR
 	cv::Mat label_img = cv::imread(label_name);
 
 	cv::imshow("mask", label_img);
 	cv::waitKey();
 
+	std::vector<cv::Mat> vectImg;
+	vectImg.push_back(img);
+	vectImg.push_back(label_img);
+
 	if (run_mode_ == "train")
 	{
-		Resize(img, img, train_w, train_h, 1);
-		Resize(label_img, label_img, train_w, train_h, 1);
-
-		HorizontalFlip(img, img, 0);
-		HorizontalFlip(label_img, label_img, 0);
-
-		VerticalFlip(img, img, 0);
-		VerticalFlip(label_img, label_img, 0);
-
-		RandomScaleRotate(img, img, 0, 45.0, 0.1, cv::INTER_LINEAR, cv::BORDER_CONSTANT);
-		RandomScaleRotate(label_img, label_img, 0, 45.0, 0.1, cv::INTER_LINEAR, cv::BORDER_CONSTANT);
+		Resize(vectImg, vectImg, train_w, train_h, 1);
+		HorizontalFlip(vectImg, vectImg, 0);
+		VerticalFlip(vectImg, vectImg, 0);
+		RandomScaleRotate(vectImg, vectImg, 0, 45.0, 0.1, cv::INTER_LINEAR, cv::BORDER_CONSTANT);
 	}
 	else
 	{
-		Resize(img, img, val_w, val_h, 1);
-		Resize(label_img, label_img, val_w, val_h, 1);
+		Resize(vectImg, vectImg, val_w, val_h, 1);
 	}
+	img = vectImg[0];
+	label_img = vectImg[1];
 
 	torch::Tensor img_tensor = torch::from_blob(img.data, { img.rows, img.cols, img.channels() }, torch::kByte);
 	img_tensor = img_tensor.permute({ 2, 0, 1 }).contiguous();		// change to {Channels, height, width)
@@ -193,36 +191,44 @@ void VOCSegDataset::createColormap()
 		colormap_.insert(std::pair<int, int>(color, i));
 	}
 }
-void VOCSegDataset::Resize(cv::Mat& src, cv::Mat& dst, int width, int height, float probability)
+void VOCSegDataset::Resize(std::vector<cv::Mat>& src, std::vector<cv::Mat>& dst, int width, int height, float probability)
 {
 	float rand_number = RandomNum<float>(0, 1);
 	if (rand_number <= probability) 
 	{
-		cv::resize(src, dst, cv::Size(width, height));
+		for(int i = 0; i < src.size(); i++)
+		{
+			cv::resize(src[i], dst[i], cv::Size(width, height));
+		}
 	}
 }
 
-void VOCSegDataset::HorizontalFlip(cv::Mat& src, cv::Mat& dst, float probability)
+void VOCSegDataset::HorizontalFlip(std::vector<cv::Mat>& src, std::vector<cv::Mat>& dst, float probability)
 {
 	float rand_number = RandomNum<float>(0, 1);
 	if (rand_number <= probability) 
 	{
-		cv::flip(src, dst, 1);
+		for (int i = 0; i < src.size(); i++)
+		{
+			cv::flip(src[i], dst[i], 1);
+		}
 
 	}
 }
 
-void VOCSegDataset::VerticalFlip(cv::Mat& src, cv::Mat& dst, float probability)
+void VOCSegDataset::VerticalFlip(std::vector<cv::Mat>& src, std::vector<cv::Mat>& dst, float probability)
 {
 	float rand_number = RandomNum<float>(0, 1);
 	if (rand_number <= probability)
 	{
-		cv::flip(src, dst, 0);
-
+		for (int i = 0; i < src.size(); i++)
+		{
+			cv::flip(src[i], dst[i], 0);
+		}
 	}
 }
 
-void VOCSegDataset::RandomScaleRotate(cv::Mat& src, cv::Mat& dst, float probability, float rotate_limit,
+void VOCSegDataset::RandomScaleRotate(std::vector<cv::Mat>& src, std::vector<cv::Mat>& dst, float probability, float rotate_limit,
 	float scale_limit, int interpolation, int boder_mode)
 {
 	float rand_number = RandomNum<float>(0, 1);
@@ -230,6 +236,9 @@ void VOCSegDataset::RandomScaleRotate(cv::Mat& src, cv::Mat& dst, float probabil
 	{
 		float angle = RandomNum<float>(-rotate_limit, rotate_limit);
 		float scale = RandomNum<float>(-scale_limit, scale_limit);
-		dst = RotateImage(src, angle, scale, interpolation, boder_mode);
+		for (int i = 0; i < src.size(); i++)
+		{
+			dst[i] = RotateImage(src[i], angle, scale, interpolation, boder_mode);
+		}
 	}
 }

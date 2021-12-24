@@ -10,12 +10,9 @@
 
 
 #include "myutils.h"
-#include "VOCSegDataset.h"
+#include "fcntrain.h"
 
 namespace po = boost::program_options;
-namespace fs = std::filesystem;
-
-
 
 po::options_description parse_argument() 
 {
@@ -26,6 +23,7 @@ po::options_description parse_argument()
 		// (1)  Define for General Parameter
 		("help", "LibTorch FCN project.")
 		("dataset_root", po::value<std::string>()->default_value("d:\\data\\VOCdevkit\\VOC2012"), "the data store folder name, only use for VOC2012")
+		("output_root", po::value<std::string>()->default_value("d:\\data"), "the data store folder name, only use for VOC2012")
 		("class_num", po::value<int>()->default_value(21), "number for classification")
 		
 		// (2) Define for Training
@@ -60,16 +58,20 @@ int main(int argc, const char* argv[])
  	::google::InitGoogleLogging(argv[0]);
  	FLAGS_alsologtostderr = true;
 
-// 	cv::Mat img = cv::imread("D:\\data\\VOCdevkit\\VOC2012\\SegmentationClass\\2007_000032.png");
-// 	std::cout << img.channels() << std::endl;
-// 	cv::imshow("test", img);
-// 	cv::waitKey();
-// 	cv::destroyAllWindows();
-
-	auto train_dataset = VOCSegDataset(vm["dataset_root"].as<std::string>(), "train", 21).map(torch::data::transforms::Stack<>());
-	auto train_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(std::move(train_dataset), 
-		torch::data::DataLoaderOptions().batch_size(vm["batch_size"].as<int>()).workers(5));
+	FCN_Train::Settings sets;
+	sets.str_data_root = vm["dataset_root"].as<std::string>();
+	sets.batch_size = vm["batch_size"].as<int>();
+	sets.lr_init = vm["lr_init"].as<float>();
+	sets.lr_gamma = vm["lr_gamma"].as<float>();
+	sets.out_root = vm["outpuy_root"].as<std::string>();
+	sets.auto_step = 10;
+	sets.check_step = 5;
+	sets.epochs = 50;
+	
+	FCN_Train fcn_train("cuda", sets);
+	fcn_train.Run();
 
 	::google::ShutdownGoogleLogging();
 	system("PAUSE");
 }
+

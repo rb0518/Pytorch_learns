@@ -15,10 +15,10 @@ public:
 	torch::optional<size_t> size() const override;
 private:
 	void createColormap();
-	void Resize(cv::Mat& src, cv::Mat& dst, int width, int height, float probability);
-	void HorizontalFlip(cv::Mat& src, cv::Mat& dst, float probability);
-	void VerticalFlip(cv::Mat& src, cv::Mat& dst, float probability);
-	void RandomScaleRotate(cv::Mat& src, cv::Mat& dst, float probability, 
+	void Resize(std::vector<cv::Mat>& src, std::vector<cv::Mat>& dst, int width, int height, float probability);
+	void HorizontalFlip(std::vector<cv::Mat>& src, std::vector<cv::Mat>& dst, float probability);
+	void VerticalFlip(std::vector<cv::Mat>& src, std::vector<cv::Mat>& dst, float probability);
+	void RandomScaleRotate(std::vector<cv::Mat>& src, std::vector<cv::Mat>& dst, float probability, 
 		float rotate_limit, float scale_limit, int interpolation, int boder_mode);
 private:
 	std::string data_root_;
