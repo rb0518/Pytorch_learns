@@ -91,11 +91,11 @@ cv::Mat RotateImage(cv::Mat src, float angle, float scale, int interpolation, in
 const int const_height = 720, const_weight = 960;
 //int batch_size = 1;
 //�����input image�ĳߴ�����˲ü�����ʺ�����ṹ�м�����������
-const int train_h = int(const_height * 2 / 3);  //480
-const int train_w = int(const_weight * 2 / 3);  //640
+const int train_h = 480;  
+const int train_w = 320;  
 
-const int val_h = int(const_height / 32) * 32;	//704
-const int val_w = const_weight;					//960
+const int val_h = 480;
+const int val_w = 320;
 
 
 VOCSegDataset::VOCSegDataset(std::string data_root, std::string run_mode, int64_t num_class)
@@ -120,8 +120,8 @@ VOCSegDataset::VOCSegDataset(std::string data_root, std::string run_mode, int64_
 	for_each(imageset_files.cbegin(), imageset_files.cend(), [&](const std::string& val) {
 		std::string image_name = val + std::string(".jpg");
 		std::string label_name = val + std::string(".png");
-		image_files_.push_back(imagespath.append(image_name).string());
-		label_files_.push_back(labelpath.append(label_name).string());
+		image_files_.push_back(imagespath.string() + "\\"+ image_name);
+		label_files_.push_back(labelpath.string() + "\\"+ label_name);
 		});
 
 }
@@ -133,13 +133,11 @@ torch::data::Example<> VOCSegDataset::get(size_t index)
 	// target one-hot����ShapeΪ{channel = 21<VOC2012������Ϊ20�����ϱ���Ϊ21, height, weight(0..1)}
 	std::string image_name = image_files_.at(index);
 	std::string label_name = label_files_.at(index);
-	LOG(INFO) << "index: " << index << " image: " << image_name << "label: " << label_name;
+/*	LOG(INFO) << "index: " << index << " image: " << image_name << "label: " << label_name;*/
 
 	cv::Mat img = cv::imread(image_name);		// ͼ������ΪBGR
 	cv::Mat label_img = cv::imread(label_name);
 
-	cv::imshow("mask", label_img);
-	cv::waitKey();
 
 	std::vector<cv::Mat> vectImg;
 	vectImg.push_back(img);
@@ -162,19 +160,22 @@ torch::data::Example<> VOCSegDataset::get(size_t index)
 	torch::Tensor img_tensor = torch::from_blob(img.data, { img.rows, img.cols, img.channels() }, torch::kByte);
 	img_tensor = img_tensor.permute({ 2, 0, 1 }).contiguous();		// change to {Channels, height, width)
 	img_tensor = img_tensor.toType(torch::kFloat32);				// change to float
+	auto img_tensor_tmp = img_tensor.clone().contiguous();
 
+	// convert label image from {h, w} to {num_class, h, w}
 	torch::Tensor color_label_tensor = torch::from_blob(label_img.data, { label_img.rows, label_img.cols, label_img.channels() }, torch::kByte);
 	torch::Tensor label_tensor = torch::zeros({ label_img.rows, label_img.cols });
+	torch::Tensor label_for_each_class = torch::zeros({ num_class_, label_img.rows, label_img.cols });
 
 	for (int i = 0; i < color_list.size(); i++)
 	{
 		cv::Scalar color = color_list[i];
 		torch::Tensor color_tensor = torch::tensor({ color.val[0], color.val[1], color[2] });
-		label_tensor = label_tensor + torch::all(color_label_tensor == color_tensor, -1) * i;
+		label_tensor = torch::all(color_label_tensor == color_tensor, -1) * i;
+		label_for_each_class[i] = label_tensor.clone();
 	}
-	label_tensor = label_tensor.unsqueeze(0);
-		
-	return { img_tensor.clone(), label_tensor.clone() };
+
+	return { img_tensor_tmp.clone(), label_for_each_class.clone() };
 }
 
 torch::optional<size_t> VOCSegDataset::size() const
@@ -182,15 +183,7 @@ torch::optional<size_t> VOCSegDataset::size() const
 	return image_files_.size();
 }
 
-void VOCSegDataset::createColormap()
-{
-	colormap_.clear();
-	for (int i = 0; i < color_list.size(); i++)
-	{
-		int color = (color_list[i].val[0] * 256 + color_list[i].val[1]) * 256 + color_list[i].val[2];
-		colormap_.insert(std::pair<int, int>(color, i));
-	}
-}
+
 void VOCSegDataset::Resize(std::vector<cv::Mat>& src, std::vector<cv::Mat>& dst, int width, int height, float probability)
 {
 	float rand_number = RandomNum<float>(0, 1);

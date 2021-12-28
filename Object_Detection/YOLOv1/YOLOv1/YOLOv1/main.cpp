@@ -124,6 +124,7 @@ int main(int argc, const char* argv[])
 		LOG(INFO) << "Will run with CPU";
 	}
 
+
 	// (3) Set Seed
 	if (vm["seed_random"].as<bool>()) {
 		std::random_device rd;
@@ -347,6 +348,7 @@ void train(po::variables_map& vm, torch::Device& device, YOLOv1& model, std::vec
 	irreg_progress.restart(start_epoch, total_epoch);
 	for (epoch = 0; epoch < total_epoch; epoch++)
 	{
+		model->to(device);
 		model->train();
 		LOG(INFO) << "epoch: " << epoch << " / " << total_epoch;
 		size_t samplecount = dataloader.get_samples_count();
@@ -375,7 +377,7 @@ void train(po::variables_map& vm, torch::Device& device, YOLOv1& model, std::vec
 
 			loss = loss_coord_xy + loss_coord_wh + loss_obj + loss_noobj + loss_class;
 			optimzer.zero_grad();
-/*			loss.backward();*/
+			loss.backward();
 			optimzer.step();
 
 			// -----------------------------------

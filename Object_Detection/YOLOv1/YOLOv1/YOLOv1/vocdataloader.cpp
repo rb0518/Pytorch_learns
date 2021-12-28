@@ -81,13 +81,13 @@ void DataLoader::VOCDataLoader::create_voc_labels(bool create_voc_file)
 	std::ofstream of;
 	if (create_voc_file)
 	{
-		of.open(labels_path_ + "//voc2012.txt");
+		of.open(labels_path_ + "\\voc2012.txt");
 	}
 	samples_.clear();
 	for (auto filename : filenames_)
 	{
 		SamplesDef sampletemp;
-		sampletemp.filename = images_path_ + "//" + filename + ".jpg";
+		sampletemp.filename = images_path_ + "\\" + filename + ".jpg";
 		convert_annotation(annotations_path_, labels_path_, filename, sampletemp.labels, sampletemp.bboxes);
 		samples_.push_back(sampletemp);
 
@@ -131,7 +131,7 @@ void DataLoader::VOCDataLoader::convert_annotation(std::string annot_path, std::
 		int height = rootTree.get<int>("annotation.size.height");
 
 		BOOST_FOREACH(ptree::value_type& v1, rootTree.get_child("annotation")) 
-		{		// ±éÑ­²éÕÒÕû¸öannotation½Úµã£¬²éÕÒËùÓÐµÄobject×Ó½Úµã
+		{		// ï¿½ï¿½Ñ­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½annotationï¿½Úµã£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½objectï¿½Ó½Úµï¿½
 			if (v1.first == "object")
 			{
 				std::string objname = v1.second.get<std::string>("name");
@@ -142,7 +142,7 @@ void DataLoader::VOCDataLoader::convert_annotation(std::string annot_path, std::
 				int xmax = bboxtree.get<int>("xmax");
 				int ymax = bboxtree.get<int>("ymax");
 
-				//std::cout << "bbox: " << xmin << " " << ymin << " - " << xmax << " " << ymax << std::endl;
+				std::cout << "bbox: " << xmin << " " << ymin << " - " << xmax << " " << ymax << std::endl;
 
 				std::vector<int> tmp = { xmin, ymin, xmax, ymax };
 				bboxes.push_back(tmp);
@@ -165,7 +165,7 @@ void  DataLoader::VOCDataLoader::load(const size_t index, std::tuple<torch::Tens
 {
 	// 1 load image from file
 	cv::Mat image_Mat_BGR, image_Mat_RGB;
-	std::string imagefilename = images_path_ + "//" + filenames_[index] + ".jpg";
+	std::string imagefilename = images_path_ + "\\" + filenames_[index];
 	image_Mat_BGR = cv::imread(imagefilename, cv::IMREAD_COLOR);
 	cv::cvtColor(image_Mat_BGR, image_Mat_RGB, cv::COLOR_BGR2RGB);
 
@@ -173,8 +173,8 @@ void  DataLoader::VOCDataLoader::load(const size_t index, std::tuple<torch::Tens
 	int imageheight = image_Mat_RGB.rows;
 
 	// 2 load bbox and class_id from vector samples_
-	float bbox_cx, bbox_cy;				// bbox ÖÐÐÄµã×ø±ê
-	float bbox_width, bbox_height;		// bbox ¿í¡¢¸ß
+	float bbox_cx, bbox_cy;				// bbox ï¿½ï¿½ï¿½Äµï¿½ï¿½ï¿½ï¿½ï¿½
+	float bbox_width, bbox_height;		// bbox ï¿½ï¿½ï¿½ï¿½ï¿½
 
 	int64_t objectid;
 

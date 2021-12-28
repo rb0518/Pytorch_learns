@@ -3,22 +3,22 @@
 #include <glog/logging.h>
 
 FCN_Train::FCN_Train(const std::string& devicetype, const Settings& sets)
-	: set_devicetype_(devicetype), sets_(sets)
+	: sets_(sets)
 {
-
+	sets_.showInfo();
 }
 
 void FCN_Train::Run()
 {
-	torch::Device device = (set_devicetype_ == "cuda" && torch::cuda::is_available()) ? torch::kCUDA : torch::kCPU;
+	torch::Device device = (sets_.device_name == "cuda" && torch::cuda::is_available()) ? torch::kCUDA : torch::kCPU;
 
 	auto train_dataset = VOCSegDataset(sets_.str_data_root, "train", 21).map(torch::data::transforms::Stack<>());
 	auto train_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(std::move(train_dataset),
-		torch::data::DataLoaderOptions().batch_size(sets_.batch_size).workers(5));
+		torch::data::DataLoaderOptions().batch_size(sets_.batch_size).workers(1));
 
 	auto val_dataset = VOCSegDataset(sets_.str_data_root, "val", 21).map(torch::data::transforms::Stack<>());
-	auto val_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(std::move(train_dataset),
-		torch::data::DataLoaderOptions().batch_size(sets_.batch_size).workers(5));
+	auto val_loader = torch::data::make_data_loader<torch::data::samplers::SequentialSampler>(std::move(val_dataset),
+		torch::data::DataLoaderOptions().batch_size(sets_.batch_size).workers(1));
 
 	FCN8s fcn8s(sets_.num_class);
 
@@ -45,29 +45,30 @@ void FCN_Train::Run()
 			// {0} get train sample data
 			CHECK(batch.data.numel()) << "tensor is empty.";
 
-			torch::Tensor input = batch.data.unsqueeze(0);
-			torch::Tensor target = batch.target.unsqueeze(0);
-			input = input.to(device);
-			target = target.to(device);
+			torch::Tensor input = batch.data.clone();
+			torch::Tensor target = batch.target.clone();
 
-			optimizer.zero_grad();	
+			input.to(device);
+			target.to(device);
+			optimizer.zero_grad();
+
 			auto time_start = std::chrono::system_clock::now();
 			auto fcns_output = fcn8s.forward(input);
 			auto time_end = std::chrono::system_clock::now();
 
-			auto loss = criterion(fcns_output, target);
-			loss.backward();
-			optimizer.step();
+ 			auto loss = criterion(fcns_output, target);
+ 			loss.backward();
+ 			optimizer.step();
 
 			totaltime += std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count();
 
-			if ((learning_times++) % sets_.check_step == 0)
+			if (learning_times % sets_.check_step == 0 && learning_times != 0)
 			{
-				LOG(INFO) << "epoch:" << epoch << "learn times:" << learning_times << "loss:" << loss.item().toFloat() << "cost:" << totaltime;
+				LOG(INFO) << "epoch:" << epoch << " learn times:" << learning_times << " loss:" << loss.item().toFloat() << " lr:" << learning_rate << " cost:" << totaltime;
 				totaltime = 0;
 			}
+			learning_times++;
 		}
-
 	}
 
 	LOG(INFO) << "training is over...";

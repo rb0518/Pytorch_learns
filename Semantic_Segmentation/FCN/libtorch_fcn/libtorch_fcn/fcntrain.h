@@ -9,6 +9,7 @@ class FCN_Train
 {
 public:
 	typedef struct tagSettings {
+		std::string device_name;
 		std::string str_data_root;
 		int num_class;
 		int epochs;
@@ -19,6 +20,17 @@ public:
 		float lr_gamma;		// learning rate adjust value
 
 		std::string out_root;
+
+		void showInfo()
+		{
+			std::cout << "You settings: " << std::endl;
+			std::cout << "   device: " << device_name << std::endl;
+			std::cout << "   Dataset root: " << str_data_root << std::endl;
+			std::cout << "   Output root: " << out_root << std::endl;
+			std::cout << "   Batch size: " << batch_size << " total epochs: " << epochs << std::endl;
+			std::cout << "   learn rate init: " << lr_init << " learn rate adjust value: " << lr_gamma << std::endl;
+		}
+
 	}Settings;
 public:
 	explicit FCN_Train(const std::string& deviceType, const Settings& sets);
@@ -26,7 +38,6 @@ public:
 
 	void Run();
 private:
-	std::string set_devicetype_;
 	Settings sets_;
 };
 

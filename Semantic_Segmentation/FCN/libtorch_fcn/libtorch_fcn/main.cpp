@@ -22,6 +22,7 @@ po::options_description parse_argument()
 
 		// (1)  Define for General Parameter
 		("help", "LibTorch FCN project.")
+		("device", po::value<std::string>()->default_value("cpu"), "select run on GPU or CPU, default value cuda")
 		("dataset_root", po::value<std::string>()->default_value("d:\\data\\VOCdevkit\\VOC2012"), "the data store folder name, only use for VOC2012")
 		("output_root", po::value<std::string>()->default_value("d:\\data"), "the data store folder name, only use for VOC2012")
 		("class_num", po::value<int>()->default_value(21), "number for classification")
@@ -63,12 +64,14 @@ int main(int argc, const char* argv[])
 	sets.batch_size = vm["batch_size"].as<int>();
 	sets.lr_init = vm["lr_init"].as<float>();
 	sets.lr_gamma = vm["lr_gamma"].as<float>();
-	sets.out_root = vm["outpuy_root"].as<std::string>();
+	sets.out_root = vm["output_root"].as<std::string>();
 	sets.auto_step = 10;
 	sets.check_step = 5;
 	sets.epochs = 50;
+	sets.num_class = 21;
+	sets.device_name = vm["device"].as <std::string>();
 	
-	FCN_Train fcn_train("cuda", sets);
+	FCN_Train fcn_train("cpu", sets);
 	fcn_train.Run();
 
 	::google::ShutdownGoogleLogging();

@@ -14,7 +14,6 @@ public:
 	torch::data::Example<> get(size_t index) override;
 	torch::optional<size_t> size() const override;
 private:
-	void createColormap();
 	void Resize(std::vector<cv::Mat>& src, std::vector<cv::Mat>& dst, int width, int height, float probability);
 	void HorizontalFlip(std::vector<cv::Mat>& src, std::vector<cv::Mat>& dst, float probability);
 	void VerticalFlip(std::vector<cv::Mat>& src, std::vector<cv::Mat>& dst, float probability);

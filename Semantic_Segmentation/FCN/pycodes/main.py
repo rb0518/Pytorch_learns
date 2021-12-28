@@ -25,7 +25,7 @@ def main():
     args = parser.parse_args()
 
     dataset_root = os.path.join(args.dataset_root, "VOC"+args.dataset_year)
-    device = 'cpu' if torch.cuda.is_available() and args.device == 'cuda' else 'cpu'
+    device = 'cuda' if torch.cuda.is_available() and args.device == 'cuda' else 'cpu'
     print("Python FCN program select device: {}".format(device))
     print("Dataset root:{}".format(dataset_root))
 
