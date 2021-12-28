@@ -46,7 +46,11 @@ po::options_description parse_argument()
 
 int main(int argc, const char* argv[])
 {
+// 	torch::Tensor test = torch::zeros({ 4,5 });
+// 	std::cout << test << std::endl;
 
+// 	auto test_GPU = test.to(torch::kCUDA).clone();
+// 	std::cout << "test: " << test.type() << " after to KUDA: " << test_GPU.type() << std::endl;
 	// (1) Extract Arguments
 	po::options_description args = parse_argument();
 	po::variables_map vm{};

@@ -52,7 +52,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>D:\libtorch\lib;D:\thirdparty142\opencv\x64\vc16\lib;D:\thirdparty142\boost\lib;D:\thirdparty142\glog\lib;D:\thirdparty142\gflags\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>asmjit.lib;c10.lib;c10_cuda.lib;caffe2_detectron_ops_gpu.lib;caffe2_module_test_dynamic.lib;caffe2_nvrtc.lib;Caffe2_perfkernels_avx.lib;Caffe2_perfkernels_avx2.lib;Caffe2_perfkernels_avx512.lib;clog.lib;cpuinfo.lib;dnnl.lib;fbgemm.lib;fbjni.lib;kineto.lib;libprotobuf-lite.lib;libprotobuf.lib;libprotoc.lib;mkldnn.lib;pthreadpool.lib;pytorch_jni.lib;torch.lib;torch_cpu.lib;torch_cuda.lib;torch_cuda_cpp.lib;torch_cuda_cu.lib;XNNPACK.lib;opencv_core451.lib;opencv_imgcodecs451.lib;opencv_highgui451.lib;opencv_imgproc451.lib;glog.lib;gflags.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>asmjit.lib;c10.lib;c10_cuda.lib;caffe2_detectron_ops_gpu.lib;caffe2_module_test_dynamic.lib;caffe2_nvrtc.lib;Caffe2_perfkernels_avx.lib;Caffe2_perfkernels_avx2.lib;Caffe2_perfkernels_avx512.lib;clog.lib;cpuinfo.lib;dnnl.lib;fbgemm.lib;fbjni.lib;kineto.lib;libprotobuf-lite.lib;libprotobuf.lib;libprotoc.lib;mkldnn.lib;pthreadpool.lib;pytorch_jni.lib;torch.lib;torch_cpu.lib;torch_cuda_cpp.lib;torch_cuda_cu.lib;XNNPACK.lib;opencv_core451.lib;opencv_imgcodecs451.lib;opencv_highgui451.lib;opencv_imgproc451.lib;glog.lib;gflags.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/INCLUDE:?searchsorted_cuda@native@at@@YA?AVTensor@2@AEBV32@0_N1@Z %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
