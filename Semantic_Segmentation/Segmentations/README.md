@@ -1,3 +1,0 @@
-# Libtorch_Segmentations
-
-整合网上有关分割的代码，并且以训练自己的数据为例子
