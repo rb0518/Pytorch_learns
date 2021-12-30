@@ -123,13 +123,13 @@ std::vector<float> iou(torch::Tensor pred, torch::Tensor target, int num_class)
 	target = target.toType(torch::kInt32);
 	int h = target.sizes()[0];  // target {h , w} , at(x, y) value is class index
 	int w = target.sizes()[1];
-	//std::cout << "h " << h << " w " << w << std::endl;
+	std::cout << "h " << h << " w " << w << std::endl;
 	torch::Tensor pred_inds = torch::zeros({ h, w }).toType(torch::kInt32);
 	torch::Tensor target_inds = torch::zeros({ h, w }).toType(torch::kInt32);
 
 	//将tensor转换成int array
 	pred = pred.squeeze(0);
-	//std::cout << "pred:" << pred.sizes() << std::endl;
+	std::cout << "pred:" << pred.sizes() << std::endl;
 	//将pred和target全部转换成int 数组,因为tensor的迭代计算非常缓慢
 	int* pred_array = (int*)pred.data_ptr();
 	int* target_array = (int*)target.data_ptr();
@@ -285,9 +285,9 @@ void FCN_Train::val(int epoch, FCN8s& fcn8s, torch::DeviceType devicetype, DataL
 		totalMeanIoU += meanIoU;
 		pixel_accs = pixel_acc(pred, target);
 		totalPixel_accs += pixel_accs;
-		//std::cout << "meanIoU: " << meanIoU << " pixel_accs: " << pixel_accs << std::endl;
+		std::cout << "meanIoU: " << meanIoU << " pixel_accs: " << pixel_accs << std::endl;
 	}
 	totalMeanIoU /= N;
 	totalPixel_accs /= N;
-	LOG(INFO) << "epoch:" << epoch << " pix_acc:" << totalPixel_accs << " meanIoU:" << totalMeanIoU;
+	std::cout << "epoch:" << epoch << " pix_acc:" << totalPixel_accs << " meanIoU:" << totalMeanIoU << std::endl;
 }

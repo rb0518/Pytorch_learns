@@ -37,6 +37,12 @@ public:
 	~FCN_Train() { ; }
 
 	void Run();
+
+	template <typename DataLoader>
+	void train(int epoch, FCN8s& fcn8s, torch::DeviceType devicetype, DataLoader& dataloader,
+		torch::optim::Optimizer& optimizer, torch::nn::BCEWithLogitsLoss& criterion, int& learn_times);
+	template <typename DataLoader>
+	void val(int epoch, FCN8s& fcn8s, torch::DeviceType devicetype, DataLoader& dataloader);
 private:
 	Settings sets_;
 };

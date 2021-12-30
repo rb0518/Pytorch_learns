@@ -164,18 +164,32 @@ torch::data::Example<> VOCSegDataset::get(size_t index)
 
 	// convert label image from {h, w} to {num_class, h, w}
 	torch::Tensor color_label_tensor = torch::from_blob(label_img.data, { label_img.rows, label_img.cols, label_img.channels() }, torch::kByte);
-	torch::Tensor label_tensor = torch::zeros({ label_img.rows, label_img.cols });
-	torch::Tensor label_for_each_class = torch::zeros({ num_class_, label_img.rows, label_img.cols }, torch::kFloat);
+	if (run_mode_ == "train")
+	{
+		torch::Tensor label_tensor = torch::zeros({ label_img.rows, label_img.cols });
+		torch::Tensor label_for_each_class = torch::zeros({ num_class_, label_img.rows, label_img.cols }, torch::kFloat);
+
+		for (int i = 0; i < color_list.size(); i++)
+		{
+			cv::Scalar color = color_list[i];
+			torch::Tensor color_tensor = torch::tensor({ color.val[0], color.val[1], color[2] });
+			label_tensor = torch::all(color_label_tensor == color_tensor, -1) * i;
+			label_for_each_class[i] = label_tensor.toType(torch::kFloat).clone();
+		}
+
+		return { img_tensor_tmp.clone(), label_for_each_class.clone() };
+	}
+	// val
+	torch::Tensor label_tensor = torch::zeros({ label_img.rows, label_img.cols }, torch::kByte);
 
 	for (int i = 0; i < color_list.size(); i++)
 	{
 		cv::Scalar color = color_list[i];
 		torch::Tensor color_tensor = torch::tensor({ color.val[0], color.val[1], color[2] });
-		label_tensor = torch::all(color_label_tensor == color_tensor, -1) * i;
-		label_for_each_class[i] = label_tensor.toType(torch::kFloat).clone();
+		label_tensor += torch::all(color_label_tensor == color_tensor, -1) * i;
 	}
 
-	return { img_tensor_tmp.clone(), label_for_each_class.clone() };
+	return { img_tensor_tmp.clone(), label_tensor.clone() };
 }
 
 torch::optional<size_t> VOCSegDataset::size() const
