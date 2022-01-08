@@ -85,6 +85,9 @@ void Segmentor<Model>::Train(float learning_rate, int epochs, int batch_size,
 		std::move(custom_dataset_val), options);
 
 	float best_loss = 1e10;
+	LOG(INFO) << "Start training...";
+	std::cout << "train path: " << train_dir << std::endl;
+	std::cout << "val path: " << val_dir << std::endl;
 	for (int epoch = 0; epoch < epochs; epoch++)
 	{
 		float loss_sum = 0;
@@ -127,7 +130,8 @@ void Segmentor<Model>::Train(float learning_rate, int epochs, int batch_size,
 		{
 			auto data = batch.data;
 			auto target = batch.target;
-
+			std::cout << "data.sizes:" << data.sizes() << std::endl;
+			std::cout << "target.sizes: " << target.sizes() << std::endl;
 			data = data.to(torch::kF32).to(device_).div(255.0);
 			target = data.to(torch::kLong).to(device_).squeeze(1);
 

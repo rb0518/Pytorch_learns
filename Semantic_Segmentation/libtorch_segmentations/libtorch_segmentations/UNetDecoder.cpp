@@ -28,16 +28,17 @@ torch::Tensor SCSEModuleImpl::forward(torch::Tensor x)
 
 Conv2dReLUImpl::Conv2dReLUImpl(int in_channels, int out_channels, int kernel_size /* = 3 */, int padding /* = 1 */)
 {
-	conv2d_ = torch::nn::Conv2d(conv_options(in_channels, out_channels, kernel_size, 1, padding));
-	batch_norm_ = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(out_channels));
-	register_module("conv2d", conv2d_);
-	register_module("bn", batch_norm_);
+	conv2d = torch::nn::Conv2d(conv_options(in_channels, out_channels, kernel_size, 1, padding));
+	bn = torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(out_channels));
+	register_module("conv2d", conv2d);
+	register_module("bn", bn);
 }
 
 torch::Tensor Conv2dReLUImpl::forward(torch::Tensor x)
 {
-	x = conv2d_->forward(x);
-	x = batch_norm_->forward(x);
+	std::cout << "Conv2dReLU forward: x " << x.sizes() << std::endl;
+	x = conv2d->forward(x);
+	x = bn->forward(x);
 
 	return x;
 }
@@ -58,7 +59,9 @@ DecoderBlockImpl::DecoderBlockImpl(int in_channels, int skip_channels, int out_c
 
 torch::Tensor DecoderBlockImpl::forward(torch::Tensor x, torch::Tensor skip) {
 	x = upsample->forward(x);
-	if (is_skip) {
+	if (is_skip)
+	{
+		std::cout << "is_skip: x: " << x.sizes() << "  skip:" << skip.sizes() << std::endl;
 		x = torch::cat({ x, skip }, 1);
 		x = attention1->forward(x);
 	}
@@ -76,8 +79,9 @@ torch::nn::Sequential CenterBlock(int in_channels, int out_channels)
 }
 
 UNetDecoderImpl::UNetDecoderImpl(std::vector<int> encoder_channels, std::vector<int> decoder_channels,
-	int n_block /* = 5 */, bool use_attention /* = false */, bool use_center /* = false */)
+	int n_blocks /* = 5 */, bool use_attention /* = false */, bool use_center /* = false */)
 {
+#if 0
 	CHECK(n_block == decoder_channels.size()) << "Model depth not equal to decoder_channels";
 
 	// 1 reverse encoder_channels 
@@ -103,13 +107,39 @@ UNetDecoderImpl::UNetDecoderImpl(std::vector<int> encoder_channels, std::vector<
 
 	for (int i = 0; i < in_channels.size() - 1; i++)
 	{
-		blocks_->push_back(DecoderBlock(in_channels[i], skip_channels[i], out_channels[i], true, use_attention));
+		blocks_->push_back(DecoderBlock(in_channels[i], skip_channels[i], out_channels[i], false, use_attention));
 	}
 	blocks_->push_back(DecoderBlock(in_channels[in_channels.size() - 1], skip_channels[in_channels.size() - 1],
 		out_channels[in_channels.size() - 1], false, use_attention));
 
 	register_module("center", center_);
 	register_module("block", blocks_);
+#else
+	if (n_blocks != decoder_channels.size()) std::cout << "Model depth not equal to your provided `decoder_channels`";
+	std::reverse(std::begin(encoder_channels), std::end(encoder_channels));
+
+	// computing blocks input and output channels
+	int head_channels = encoder_channels[0];
+	std::vector<int> out_channels = decoder_channels;
+	decoder_channels.pop_back();
+	decoder_channels.insert(decoder_channels.begin(), head_channels);
+	std::vector<int> in_channels = decoder_channels;
+	encoder_channels.erase(encoder_channels.begin());
+	std::vector<int> skip_channels = encoder_channels;
+	skip_channels[skip_channels.size() - 1] = 0;
+
+	if (use_center)  center = CenterBlock(head_channels, head_channels);
+	else center = torch::nn::Sequential(torch::nn::Identity());
+	//the last DecoderBlock of blocks need no skip tensor
+	for (int i = 0; i < in_channels.size() - 1; i++) {
+		blocks->push_back(DecoderBlock(in_channels[i], skip_channels[i], out_channels[i], false, use_attention));
+	}
+	blocks->push_back(DecoderBlock(in_channels[in_channels.size() - 1], skip_channels[in_channels.size() - 1],
+		out_channels[in_channels.size() - 1], false, use_attention));
+
+	register_module("center", center);
+	register_module("blocks", blocks); 
+#endif
 }
 
 torch::Tensor UNetDecoderImpl::forward(std::vector<torch::Tensor> features)
@@ -117,10 +147,10 @@ torch::Tensor UNetDecoderImpl::forward(std::vector<torch::Tensor> features)
 	std::reverse(std::begin(features), std::end(features));
 	torch::Tensor head = features[0];
 	features.erase(features.begin());
-	auto x = center_->forward(head);
-	for (int i = 0; i < blocks_->size(); i++)
+	auto x = center->forward(head);
+	for (int i = 0; i < blocks->size(); i++)
 	{
-		x = blocks_[i]->as<DecoderBlock>()->forward(x, features[i]);
+		x = blocks[i]->as<DecoderBlock>()->forward(x, features[i]);
 	}
 	return x;
 }

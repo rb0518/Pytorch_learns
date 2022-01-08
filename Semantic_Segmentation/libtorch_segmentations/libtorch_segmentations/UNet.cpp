@@ -12,6 +12,7 @@ UNetImpl::UNetImpl(int num_classes, std::string encoder_name /* = "resnet18" */,
 				resnext50_32x4d, resnext101_32x8d, vgg11, vgg11_bn, vgg13, vgg13_bn, \
 				vgg16, vgg16_bn, vgg19, vgg19_bn,}";
 
+	std::vector<int> encoder_channels = encoder_param[encoder_name]["out_channels"];
 	if (encoder_param[encoder_name]["class_type"] == "resnet")
 	{
 	//	encoder_ = new ResNetImpl(encoder_param[encoder_name]["layers"], 1000, encoder_name);
@@ -28,6 +29,7 @@ UNetImpl::UNetImpl(int num_classes, std::string encoder_name /* = "resnet18" */,
 	}
 
 	encoder_->load_pretrained(pretrained_path);
+	decoder_ = UNetDecoder(encoder_channels, decoder_channels, encoder_depth, use_attention, /*use_center = */ false);
 	segmentation_head_ = SegmentationHead(decoder_channels[decoder_channels.size() - 1], num_classes, 1, 1);
 
 	register_module("encoder", encoder_/*std::shared_ptr<Backbone>(encoder_)*/);
