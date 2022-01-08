@@ -9,6 +9,24 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
+    <Filter Include="Header Files\utils">
+      <UniqueIdentifier>{6ef89de5-7322-4405-baec-af2c1cf2ee3a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\util">
+      <UniqueIdentifier>{4e0ed74a-8839-4d17-aade-777c790e860e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\backbones">
+      <UniqueIdentifier>{265341bc-67dc-48e4-ad08-9b756bbdd8fd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\backbones">
+      <UniqueIdentifier>{07d239b4-d193-49e2-816b-4d4e1c23c3ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\architectures">
+      <UniqueIdentifier>{d2d6152d-702c-45d1-a8ec-9682e6e66012}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\architectures">
+      <UniqueIdentifier>{8a882162-d329-48ac-bb01-1118e21e1046}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Resource Files">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
@@ -21,10 +39,73 @@
     <ClCompile Include="myutils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="util.cpp">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="Segmentor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SegDataset.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Augmentations.cpp">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="ResNet.cpp">
+      <Filter>Source Files\backbones</Filter>
+    </ClCompile>
+    <ClCompile Include="VGG.cpp">
+      <Filter>Source Files\backbones</Filter>
+    </ClCompile>
+    <ClCompile Include="UNet.cpp">
+      <Filter>Source Files\architectures</Filter>
+    </ClCompile>
+    <ClCompile Include="UNetDecoder.cpp">
+      <Filter>Source Files\architectures</Filter>
+    </ClCompile>
+    <ClCompile Include="loss.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="myutils.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="InterFace.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="util.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="json.hpp">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="readfile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Segmentor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SegDataset.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Augmentations.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="loss.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ResNet.h">
+      <Filter>Header Files\backbones</Filter>
+    </ClInclude>
+    <ClInclude Include="VGG.h">
+      <Filter>Header Files\backbones</Filter>
+    </ClInclude>
+    <ClInclude Include="UNet.h">
+      <Filter>Header Files\architectures</Filter>
+    </ClInclude>
+    <ClInclude Include="UNetDecoder.h">
+      <Filter>Header Files\architectures</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

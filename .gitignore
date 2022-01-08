@@ -47,3 +47,5 @@ checkpoints/
 __pycache__/
 
 data/
+
+*.pt

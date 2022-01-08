@@ -57,11 +57,32 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Augmentations.cpp" />
+    <ClCompile Include="loss.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="myutils.cpp" />
+    <ClCompile Include="ResNet.cpp" />
+    <ClCompile Include="SegDataset.cpp" />
+    <ClCompile Include="Segmentor.cpp" />
+    <ClCompile Include="UNet.cpp" />
+    <ClCompile Include="UNetDecoder.cpp" />
+    <ClCompile Include="util.cpp" />
+    <ClCompile Include="VGG.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Augmentations.h" />
+    <ClInclude Include="InterFace.h" />
+    <ClInclude Include="json.hpp" />
+    <ClInclude Include="loss.hpp" />
     <ClInclude Include="myutils.h" />
+    <ClInclude Include="readfile.h" />
+    <ClInclude Include="ResNet.h" />
+    <ClInclude Include="SegDataset.h" />
+    <ClInclude Include="Segmentor.h" />
+    <ClInclude Include="UNet.h" />
+    <ClInclude Include="UNetDecoder.h" />
+    <ClInclude Include="util.h" />
+    <ClInclude Include="VGG.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
