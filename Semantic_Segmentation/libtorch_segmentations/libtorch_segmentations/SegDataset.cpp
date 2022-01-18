@@ -30,7 +30,7 @@ std::vector<cv::Scalar> get_color_list() {
 
 SegDataset::SegDataset(int resize_width, int resize_height, std::vector<std::string> list_images,
 	std::vector<std::string> list_labels, std::vector<std::string> name_list, trainTricks trichs, bool isTrain /* = false */)
-	: tricks_(trichs), resize_width_(resize_width), resize_height_(resize_height_), list_names_(name_list),
+	: tricks_(trichs), resize_width_(resize_width), resize_height_(resize_height), list_names_(name_list),
 	list_images_(list_images), list_labels_(list_labels)
 {
 	for (int i = 0; i < name_list.size(); i++)

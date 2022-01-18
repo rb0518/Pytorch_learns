@@ -16,6 +16,8 @@ public:
 	torch::Tensor forward(torch::Tensor x);
 
 private:
+	// -- 2022-1-18 Refer to the python UNET modeland rewrite the C + +code ---
+#if 0
 	std::shared_ptr<Backbone> encoder_;
 	UNetDecoder decoder_{ nullptr };
 	SegmentationHead segmentation_head_{ nullptr };
@@ -23,6 +25,21 @@ private:
 	std::vector<int> basic_channels_ = { 3, 64, 64, 128, 256, 512 };
 	std::vector<int> bottle_channels_ = { 3, 64, 256, 512, 1024, 2048 };
 	std::map<std::string, std::vector<int>> name2layers_ = getParams();
+#else
+	InConv inconv{ nullptr };
+
+	DownScale down1{ nullptr };
+	DownScale down2{ nullptr };
+	DownScale down3{ nullptr };
+	DownScale down4{ nullptr };
+
+	UpScale up1{ nullptr };
+	UpScale up2{ nullptr };
+	UpScale up3{ nullptr };
+	UpScale up4{ nullptr };
+
+	OutConv outconv{ nullptr };
+#endif
 };
 
 TORCH_MODULE(UNet);

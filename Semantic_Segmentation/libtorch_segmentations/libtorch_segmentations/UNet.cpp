@@ -4,6 +4,8 @@
 UNetImpl::UNetImpl(int num_classes, std::string encoder_name /* = "resnet18" */, std::string pretrained_path /* = "" */,
 	int encoder_depth /* = 5 */, std::vector<int> decoder_channels /* =  */, bool use_attention /* = false */) 
 {
+	// -- 2022-1-18 Refer to the python UNET modeland rewrite the C + +code ---
+#if 0
 	num_classes_ = num_classes;
 
 	auto encoder_param = encoder_params();
@@ -35,12 +37,58 @@ UNetImpl::UNetImpl(int num_classes, std::string encoder_name /* = "resnet18" */,
 	register_module("encoder", encoder_/*std::shared_ptr<Backbone>(encoder_)*/);
 	register_module("decoder", decoder_);
 	register_module("segmentation_head", segmentation_head_);
+#else
+	inconv = InConv(3, 64);
+
+	down1 = DownScale(64, 128);
+	down2 = DownScale(128, 256);
+	down3 = DownScale(256, 512);
+	down4 = DownScale(512, 512);
+
+	up1 = UpScale(1024, 256, false);
+	up2 = UpScale(512, 128, false);
+	up3 = UpScale(256, 64, false);
+	up4 = UpScale(128, 64, false);
+
+	outconv = OutConv(64, num_classes);
+
+	register_module("inconv", inconv);
+	register_module("down1", down1);
+	register_module("down2", down2);
+	register_module("down3", down3);
+	register_module("down4", down4);
+
+	register_module("up1", up1);
+	register_module("up2", up2);
+	register_module("up3", up3);
+	register_module("up4", up4);
+
+	register_module("outconv", outconv);
+#endif
 }
 
 torch::Tensor UNetImpl::forward(torch::Tensor x)
 {
+#if 0
 	std::vector<torch::Tensor> features = encoder_->features(x);
 	x = decoder_->forward(features);
 	x = segmentation_head_->forward(x);
 	return x;
+#else
+	auto x1 = inconv->forward(x);
+
+	auto x2 = down1->forward(x1);
+	auto x3 = down2->forward(x2);
+	auto x4 = down3->forward(x3);
+	auto x5 = down4->forward(x4);
+
+	x = up1->forward(x5, x4);
+	x = up2->forward(x, x3);
+	x = up3->forward(x, x2);
+	x = up4->forward(x, x1);
+
+	x = outconv(x);
+
+	return x;
+#endif
 }

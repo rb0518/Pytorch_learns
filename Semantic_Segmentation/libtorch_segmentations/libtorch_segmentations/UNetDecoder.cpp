@@ -81,8 +81,8 @@ torch::nn::Sequential CenterBlock(int in_channels, int out_channels)
 UNetDecoderImpl::UNetDecoderImpl(std::vector<int> encoder_channels, std::vector<int> decoder_channels,
 	int n_blocks /* = 5 */, bool use_attention /* = false */, bool use_center /* = false */)
 {
-#if 0
-	CHECK(n_block == decoder_channels.size()) << "Model depth not equal to decoder_channels";
+#if 1
+	CHECK(n_blocks == decoder_channels.size()) << "Model depth not equal to decoder_channels";
 
 	// 1 reverse encoder_channels 
 	std::reverse(std::begin(encoder_channels), std::end(encoder_channels));
@@ -98,22 +98,22 @@ UNetDecoderImpl::UNetDecoderImpl(std::vector<int> encoder_channels, std::vector<
 
 	if (use_center)
 	{
-		center_ = CenterBlock(head_channels, head_channels);
+		center = CenterBlock(head_channels, head_channels);
 	}
 	else
 	{	// torch::nn::Identity 直接返回输入, 用来保持程序模块结构一致
-		center_ = torch::nn::Sequential(torch::nn::Identity());
+		center = torch::nn::Sequential(torch::nn::Identity());
 	}
 
 	for (int i = 0; i < in_channels.size() - 1; i++)
 	{
-		blocks_->push_back(DecoderBlock(in_channels[i], skip_channels[i], out_channels[i], false, use_attention));
+		blocks->push_back(DecoderBlock(in_channels[i], skip_channels[i], out_channels[i], false, use_attention));
 	}
-	blocks_->push_back(DecoderBlock(in_channels[in_channels.size() - 1], skip_channels[in_channels.size() - 1],
+	blocks->push_back(DecoderBlock(in_channels[in_channels.size() - 1], skip_channels[in_channels.size() - 1],
 		out_channels[in_channels.size() - 1], false, use_attention));
 
-	register_module("center", center_);
-	register_module("block", blocks_);
+	register_module("center", center);
+	register_module("block", blocks);
 #else
 	if (n_blocks != decoder_channels.size()) std::cout << "Model depth not equal to your provided `decoder_channels`";
 	std::reverse(std::begin(encoder_channels), std::end(encoder_channels));
@@ -153,4 +153,103 @@ torch::Tensor UNetDecoderImpl::forward(std::vector<torch::Tensor> features)
 		x = blocks[i]->as<DecoderBlock>()->forward(x, features[i]);
 	}
 	return x;
+}
+
+// -- 2022-1-18 Refer to the python UNET model and rewrite the C + +code ---
+DoubleConvImpl::DoubleConvImpl(int in_channel, int out_channel, int mid_channel /* = -1 */)
+{
+	if (mid_channel == -1)
+	{
+		mid_channel = out_channel;
+	}
+
+	double_conv = torch::nn::Sequential(
+		torch::nn::Conv2d(conv_options(in_channel, mid_channel, 3).bias(false).padding(1)),
+		torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(mid_channel)),
+		torch::nn::ReLU(torch::nn::ReLUOptions().inplace(true)),
+		torch::nn::Conv2d(conv_options(mid_channel, out_channel, 3).bias(false).padding(1)),
+		torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(out_channel)),
+		torch::nn::ReLU(torch::nn::ReLUOptions().inplace(true))
+		);
+
+	register_module("double_conv", double_conv);
+}
+
+torch::Tensor DoubleConvImpl::forward(torch::Tensor x)
+{
+	x = double_conv->forward(x);
+	return x;
+}
+
+InConvImpl::InConvImpl(int in_channel, int out_channel)
+{
+	double_conv = DoubleConv(in_channel, out_channel);
+	
+	register_module("double_conv", double_conv);
+}
+
+torch::Tensor InConvImpl::forward(torch::Tensor x)
+{
+	x = double_conv->forward(x);
+	return x;
+}
+
+DownScaleImpl::DownScaleImpl(int in_channel, int out_channel)
+{
+	maxpool_conv = torch::nn::Sequential(
+		torch::nn::MaxPool2d(torch::nn::MaxPool2dOptions(2)),
+		DoubleConv(in_channel, out_channel)
+	);
+
+	register_module("maxpool", maxpool_conv);
+}
+
+torch::Tensor DownScaleImpl::forward(torch::Tensor x)
+{
+	x = maxpool_conv->forward(x);
+	return x;
+}
+
+UpScaleImpl::UpScaleImpl(int in_channel, int out_channel, bool bilinear)
+{
+	bilinear_ = bilinear;
+	up_upsample = torch::nn::Upsample(
+		torch::nn::UpsampleOptions().scale_factor(std::vector<double>({ 2 })).mode(torch::kBilinear).align_corners(true));
+	up_convtrans = torch::nn::ConvTranspose2d(
+		torch::nn::ConvTranspose2dOptions(in_channel/2, in_channel/2, 2).stride(2));
+	double_conv = DoubleConv(in_channel, out_channel);
+
+	register_module("upsample", up_upsample);
+	register_module("convtrans", up_convtrans);
+	register_module("double_conv", double_conv);
+}
+
+torch::Tensor UpScaleImpl::forward(torch::Tensor x1, torch::Tensor x2)
+{
+	if (bilinear_)
+		x1 = up_upsample->forward(x1);
+	else
+		x1 = up_convtrans->forward(x1);
+
+	auto diffX = x2.sizes()[2] - x1.sizes()[2];	// NCWH
+	auto diffY = x2.sizes()[3] - x1.sizes()[3];
+
+	x1 = torch::nn::functional::pad(x1, torch::nn::functional::PadFuncOptions({ diffX / 2, diffX - diffX / 2, diffY / 2, diffY - diffY / 2 }));
+	
+	auto x = torch::cat({ x2, x1 }, 1);
+	x = double_conv->forward(x);
+
+	return x;
+}
+
+OutConvImpl::OutConvImpl(int in_channel, int out_channel)
+{
+	conv = torch::nn::Conv2d(conv_options(in_channel, out_channel, 1));
+
+	register_module("conv", conv);
+}
+
+torch::Tensor OutConvImpl::forward(torch::Tensor x)
+{
+	return conv->forward(x);
 }

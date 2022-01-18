@@ -130,16 +130,19 @@ void Segmentor<Model>::Train(float learning_rate, int epochs, int batch_size,
 		{
 			auto data = batch.data;
 			auto target = batch.target;
-			std::cout << "data.sizes:" << data.sizes() << std::endl;
-			std::cout << "target.sizes: " << target.sizes() << std::endl;
-			data = data.to(torch::kF32).to(device_).div(255.0);
-			target = data.to(torch::kLong).to(device_).squeeze(1);
 
+			data = data.to(torch::kF32).to(device_).div(255.0);
+			target = target.to(torch::kLong).to(device_).squeeze(1);
+// 			std::cout << "data.sizes:" << data.sizes() << std::endl;
+// 			std::cout << "target.sizes: " << target.sizes() << std::endl;
 			optimizer.zero_grad();
 
 			torch::Tensor prediction = model_->forward(data);
 
+// 			std::cout << "target.sizes:" << target.sizes() << std::endl;
+// 			std::cout << "prediction.sizes: " << prediction.sizes() << std::endl;
 			torch::Tensor ce_loss = CELoss(prediction, target);
+
 			torch::Tensor dice_loss = DiceLoss(torch::softmax(prediction, 1), target.unsqueeze(1), name_list_.size());
 			auto loss = dice_loss * tricks_.dice_ce_ratio + ce_loss * (1 - tricks_.dice_ce_ratio);
 			// Compute gradients

@@ -52,3 +52,57 @@ private:
 	torch::nn::ModuleList blocks; //= torch::nn::ModuleList();
 };
 TORCH_MODULE(UNetDecoder);
+
+// -- 2022-1-18 Refer to the python UNET modeland rewrite the C + +code ---
+class DoubleConvImpl : public torch::nn::Module 
+{
+public:
+	DoubleConvImpl(int in_channel, int out_channel, int mid_channel = -1);
+	torch::Tensor forward(torch::Tensor x);
+private:
+	torch::nn::Sequential double_conv{ nullptr };
+};
+TORCH_MODULE(DoubleConv);
+
+class InConvImpl : public torch::nn::Module
+{
+public:
+	InConvImpl(int in_channel, int out_channel);
+	torch::Tensor forward(torch::Tensor x);
+private:
+	DoubleConv double_conv{ nullptr };
+};
+TORCH_MODULE(InConv);
+
+class DownScaleImpl : public torch::nn::Module
+{
+public:
+	DownScaleImpl(int in_channel, int out_channel);
+	torch::Tensor forward(torch::Tensor x);
+private:
+	torch::nn::Sequential maxpool_conv{ nullptr };
+};
+TORCH_MODULE(DownScale);
+
+class UpScaleImpl : public torch::nn::Module
+{
+public:
+	UpScaleImpl(int in_channel, int out_channel, bool bilinear);
+	torch::Tensor forward(torch::Tensor x1, torch::Tensor x2);
+private:
+	bool bilinear_;
+	torch::nn::Upsample up_upsample{ nullptr };
+	torch::nn::ConvTranspose2d up_convtrans{ nullptr };
+	DoubleConv double_conv{ nullptr };
+};
+TORCH_MODULE(UpScale);
+
+class OutConvImpl : public torch::nn::Module
+{
+public:
+	OutConvImpl(int in_channel, int out_channel);
+	torch::Tensor forward(torch::Tensor x);
+private:
+	torch::nn::Conv2d conv{ nullptr };
+};
+TORCH_MODULE(OutConv);
