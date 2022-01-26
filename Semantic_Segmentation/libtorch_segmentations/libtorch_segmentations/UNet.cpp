@@ -2,10 +2,10 @@
 #include <glog/logging.h>
 
 UNetImpl::UNetImpl(int num_classes, std::string encoder_name /* = "resnet18" */, std::string pretrained_path /* = "" */,
-	int encoder_depth /* = 5 */, std::vector<int> decoder_channels /* =  */, bool use_attention /* = false */) 
+	int encoder_depth /* = 5 */, std::vector<int> decoder_channels /* = { 256, 128, 64, 32, 16 } */, bool use_attention /* = false */) 
 {
 	// -- 2022-1-18 Refer to the python UNET modeland rewrite the C + +code ---
-#if 0
+#if 1
 	num_classes_ = num_classes;
 
 	auto encoder_param = encoder_params();
@@ -69,7 +69,7 @@ UNetImpl::UNetImpl(int num_classes, std::string encoder_name /* = "resnet18" */,
 
 torch::Tensor UNetImpl::forward(torch::Tensor x)
 {
-#if 0
+#if 1
 	std::vector<torch::Tensor> features = encoder_->features(x);
 	x = decoder_->forward(features);
 	x = segmentation_head_->forward(x);

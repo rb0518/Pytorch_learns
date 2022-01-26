@@ -44,13 +44,13 @@ torch::Tensor Conv2dReLUImpl::forward(torch::Tensor x)
 }
 
 DecoderBlockImpl::DecoderBlockImpl(int in_channels, int skip_channels, int out_channels, bool skip, bool attention) {
-	conv1 = Conv2dReLU(in_channels + skip_channels, out_channels, 3, 1);
+	conv1 = Conv2dReLU(in_channels /*+ skip_channels*/, out_channels, 3, 1);
 	conv2 = Conv2dReLU(out_channels, out_channels, 3, 1);
 	register_module("conv1", conv1);
 	register_module("conv2", conv2);
 	upsample = torch::nn::Upsample(torch::nn::UpsampleOptions().scale_factor(std::vector<double>({ 2,2 })).mode(torch::kNearest));
 
-	attention1 = SCSEModule(in_channels + skip_channels, 16, attention);
+	attention1 = SCSEModule(in_channels /*+ skip_channels*/, 16, attention);
 	attention2 = SCSEModule(out_channels, 16, attention);
 	register_module("attention1", attention1);
 	register_module("attention2", attention2);
@@ -85,16 +85,27 @@ UNetDecoderImpl::UNetDecoderImpl(std::vector<int> encoder_channels, std::vector<
 	CHECK(n_blocks == decoder_channels.size()) << "Model depth not equal to decoder_channels";
 
 	// 1 reverse encoder_channels 
+	std::cout << "1: " << decoder_channels << std::endl;
 	std::reverse(std::begin(encoder_channels), std::end(encoder_channels));
+	std::cout << "2 reverse : " << encoder_channels << std::endl;
 
 	int head_channels = encoder_channels[0];
 	std::vector<int> out_channels = decoder_channels;
+	std::cout << "2: " << out_channels << "   h: " <<  head_channels << std::endl;
+
 	decoder_channels.pop_back();
+
+	std::cout << "3: " << out_channels << "   h: " << head_channels << std::endl;
 	decoder_channels.insert(decoder_channels.begin(), head_channels);
+	std::cout << "4: " << out_channels << "   h: " << head_channels << std::endl;
+
 	std::vector<int> in_channels = decoder_channels;
 	encoder_channels.erase(encoder_channels.begin());
+	std::cout << "5 erase : " << encoder_channels << std::endl;
+
 	std::vector<int> skip_channels = encoder_channels;
 	skip_channels[skip_channels.size() - 1] = 0;
+	std::cout << "6 erase : " << skip_channels << std::endl;
 
 	if (use_center)
 	{

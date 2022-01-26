@@ -45,6 +45,8 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <AdditionalOptions> /wd"4996" %(AdditionalOptions)</AdditionalOptions>
+      <DisableSpecificWarnings>4251;4624;4244;4005;4275;4267</DisableSpecificWarnings>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -58,6 +60,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Augmentations.cpp" />
+    <ClCompile Include="FPN.cpp" />
+    <ClCompile Include="FPNDecoder.cpp" />
     <ClCompile Include="loss.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="myutils.cpp" />
@@ -71,6 +75,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Augmentations.h" />
+    <ClInclude Include="FPN.h" />
+    <ClInclude Include="FPNDecoder.h" />
     <ClInclude Include="InterFace.h" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="loss.hpp" />

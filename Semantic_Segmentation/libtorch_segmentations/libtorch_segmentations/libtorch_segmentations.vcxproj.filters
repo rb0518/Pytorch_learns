@@ -66,6 +66,12 @@
     <ClCompile Include="loss.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FPN.cpp">
+      <Filter>Source Files\architectures</Filter>
+    </ClCompile>
+    <ClCompile Include="FPNDecoder.cpp">
+      <Filter>Source Files\architectures</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="myutils.h">
@@ -105,6 +111,12 @@
       <Filter>Header Files\architectures</Filter>
     </ClInclude>
     <ClInclude Include="UNetDecoder.h">
+      <Filter>Header Files\architectures</Filter>
+    </ClInclude>
+    <ClInclude Include="FPNDecoder.h">
+      <Filter>Header Files\architectures</Filter>
+    </ClInclude>
+    <ClInclude Include="FPN.h">
       <Filter>Header Files\architectures</Filter>
     </ClInclude>
   </ItemGroup>

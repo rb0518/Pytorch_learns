@@ -10,14 +10,14 @@ public:
 	~UNetImpl() {
 	};
 
-	UNetImpl(int num_classes, std::string encoder_name = "resnet18", std::string pretrained_path = "",
+	explicit UNetImpl(int num_classes, std::string encoder_name = "resnet18", std::string pretrained_path = "",
 		int encoder_depth = 5, std::vector<int> decoder_channels = { 256, 128, 64, 32, 16 }, 
 		bool use_attention = false);
 	torch::Tensor forward(torch::Tensor x);
 
 private:
 	// -- 2022-1-18 Refer to the python UNET modeland rewrite the C + +code ---
-#if 0
+#if 1
 	std::shared_ptr<Backbone> encoder_;
 	UNetDecoder decoder_{ nullptr };
 	SegmentationHead segmentation_head_{ nullptr };
@@ -43,4 +43,6 @@ private:
 };
 
 TORCH_MODULE(UNet);
+
+
 

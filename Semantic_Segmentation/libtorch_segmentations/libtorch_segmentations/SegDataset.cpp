@@ -82,8 +82,7 @@ torch::data::Example<> SegDataset::get(size_t index) {
 	label_tensor = label_tensor.unsqueeze(0);	// CHW==>NCHW
 	return { img_tensor.clone(), label_tensor.clone() };
 }
-#include <fstream>
-#include "json.hpp"
+
 void SegDataset::draw_mask(std::string json_path, cv::Mat& mask)
 {
 	std::ifstream jfile(json_path);

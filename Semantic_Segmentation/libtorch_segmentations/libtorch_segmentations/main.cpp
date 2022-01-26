@@ -11,6 +11,8 @@
 
 #include "myutils.h"
 
+#include "UNet.h"
+
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
 
@@ -52,25 +54,19 @@ int main(int argc, const char* argv[])
  	::google::InitGoogleLogging(argv[0]);
  	FLAGS_alsologtostderr = true;
 
-// 	std::vector<std::string> label_list;
-// 	std::vector<std::string> image_list;
-// 	load_seg_data_from_folder("D:\\LibtorchSegmentation-main\\voc_person_seg\\train", ".jpg", image_list, label_list);
-// 	for_each(label_list.begin(), label_list.end(), [&](std::string s) {
-// 		std::cout << s << std::endl; });
-
 	Segmentor<UNet> segmentor;
 	segmentor.Initialize(0, 512, 512, { "backgroud", "persion" },
 		"resnet34", "D:\\Pytorch_learns\\Semantic_Segmentation\\utils\\resetnet34.pt");
 
 	trainTricks tricks;
-	tricks.horizontal_flip_prob = 0.5;
-	tricks.vertical_flip_prob = 0.5;
-	tricks.scale_rotate_prob = 0.3;
+	tricks.horizontal_flip_prob = 0.5f;
+	tricks.vertical_flip_prob = 0.5f;
+	tricks.scale_rotate_prob = 0.3f;
 	tricks.decay_epochs = { 40, 80 };
 	tricks.freeze_epochs = 8;
 
 	segmentor.SetTrainTricks(tricks);
-	segmentor.Train(0.0003, 300, 4, "D:\\LibtorchSegmentation-main\\voc_person_seg",
+	segmentor.Train(0.0003f, 300, 4, "D:\\LibtorchSegmentation-main\\voc_person_seg",
 		".jpg", "D:\\LibtorchSegmentation-main\\weights\\segmentor.pt");
 
 
