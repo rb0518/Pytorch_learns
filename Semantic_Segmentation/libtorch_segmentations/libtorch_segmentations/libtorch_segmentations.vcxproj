@@ -65,6 +65,8 @@
     <ClCompile Include="loss.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="myutils.cpp" />
+    <ClCompile Include="PSPNet.cpp" />
+    <ClCompile Include="PSPNetDecoder.cpp" />
     <ClCompile Include="ResNet.cpp" />
     <ClCompile Include="SegDataset.cpp" />
     <ClCompile Include="Segmentor.cpp" />
@@ -81,6 +83,8 @@
     <ClInclude Include="json.hpp" />
     <ClInclude Include="loss.hpp" />
     <ClInclude Include="myutils.h" />
+    <ClInclude Include="PSPNet.h" />
+    <ClInclude Include="PSPNetDecoder.h" />
     <ClInclude Include="readfile.h" />
     <ClInclude Include="ResNet.h" />
     <ClInclude Include="SegDataset.h" />

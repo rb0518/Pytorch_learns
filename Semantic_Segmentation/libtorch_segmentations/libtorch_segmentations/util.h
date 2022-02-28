@@ -48,6 +48,19 @@ private:
     torch::nn::Upsample upsampling{nullptr};
 };TORCH_MODULE(SegmentationHead);
 
+inline torch::nn::Sequential Conv2dReLU(int in_channels, int out_channels, int kernel_size, int padding = 0,
+    int stride = 1, bool use_batchnorm = true)
+{
+	torch::nn::Sequential seq = torch::nn::Sequential();
+	seq->push_back(torch::nn::Conv2d(conv_options(in_channels, out_channels, kernel_size,
+		stride, padding, 1, !use_batchnorm, 1)));
+	if (use_batchnorm)
+		seq->push_back(torch::nn::BatchNorm2d(torch::nn::BatchNorm2dOptions(out_channels)));
+
+	seq->push_back(torch::nn::ReLU(torch::nn::ReLUOptions(true)));
+	return seq;
+}
+
 std::string replace_all_distinct(std::string str, const std::string old_value, const std::string new_value);
 
 void load_seg_data_from_folder(std::string folder, std::string image_type,

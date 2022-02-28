@@ -31,7 +31,7 @@ UNetImpl::UNetImpl(int num_classes, std::string encoder_name /* = "resnet18" */,
 	}
 
 	encoder_->load_pretrained(pretrained_path);
-	decoder_ = UNetDecoder(encoder_channels, decoder_channels, encoder_depth, use_attention, /*use_center = */ false);
+	decoder_ = UNetsModule::UNetDecoder(encoder_channels, decoder_channels, encoder_depth, use_attention, /*use_center = */ false);
 	segmentation_head_ = SegmentationHead(decoder_channels[decoder_channels.size() - 1], num_classes, 1, 1);
 
 	register_module("encoder", encoder_/*std::shared_ptr<Backbone>(encoder_)*/);

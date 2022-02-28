@@ -19,7 +19,7 @@ private:
 	// -- 2022-1-18 Refer to the python UNET modeland rewrite the C + +code ---
 #if 1
 	std::shared_ptr<Backbone> encoder_;
-	UNetDecoder decoder_{ nullptr };
+	UNetsModule::UNetDecoder decoder_{ nullptr };
 	SegmentationHead segmentation_head_{ nullptr };
 	int num_classes_ = 1;
 	std::vector<int> basic_channels_ = { 3, 64, 64, 128, 256, 512 };

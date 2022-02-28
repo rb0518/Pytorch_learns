@@ -119,8 +119,8 @@ void Segmentor<Model>::Train(float learning_rate, int epochs, int batch_size,
 
 			torch::Tensor prediction = model_->forward(data);
 
-			 			std::cout << "target.sizes:" << target.sizes() << std::endl;
-			 			std::cout << "prediction.sizes: " << prediction.sizes() << std::endl;
+			// 			std::cout << "target.sizes:" << target.sizes() << std::endl;
+			// 			std::cout << "prediction.sizes: " << prediction.sizes() << std::endl;
 			torch::Tensor ce_loss = CELoss(prediction, target);
 
 			torch::Tensor dice_loss = DiceLoss(torch::softmax(prediction, 1), target.unsqueeze(1), name_list_.size());
@@ -129,13 +129,13 @@ void Segmentor<Model>::Train(float learning_rate, int epochs, int batch_size,
 			loss.backward();
 			optimizer.step();
 			loss_sum += loss.item().toFloat();
-			dice_coef_sum += (1 - dice_loss).item().toFloat();
+			dice_coef_sum += (1 - dice_loss.item().toFloat());
 			batch_count++;
 			loss_train = loss_sum / batch_count / batch_size;
 			auto dice_coef = dice_coef_sum / batch_count;
 
 			std::cout << "Epoch: " << epoch << ", Train loss:" << loss_train <<
-				"  Dice coefficient: " << dice_coef << std::endl;
+				"  Dice coefficient: " << dice_coef_sum << std::endl;
 
 		}
 

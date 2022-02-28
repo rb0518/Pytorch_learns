@@ -1,5 +1,6 @@
 #include "UNetDecoder.h"
 #include "util.h"
+namespace UNetsModule {
 
 SCSEModuleImpl::SCSEModuleImpl(int in_channels, int reduction /* = 16 */, bool use_attention /* = false */)
 {
@@ -36,7 +37,7 @@ Conv2dReLUImpl::Conv2dReLUImpl(int in_channels, int out_channels, int kernel_siz
 
 torch::Tensor Conv2dReLUImpl::forward(torch::Tensor x)
 {
-	std::cout << "Conv2dReLU forward: x " << x.sizes() << std::endl;
+//	std::cout << "Conv2dReLU forward: x " << x.sizes() << std::endl;
 	x = conv2d->forward(x);
 	x = bn->forward(x);
 
@@ -44,8 +45,8 @@ torch::Tensor Conv2dReLUImpl::forward(torch::Tensor x)
 }
 
 DecoderBlockImpl::DecoderBlockImpl(int in_channels, int skip_channels, int out_channels, bool skip, bool attention) {
-	conv1 = Conv2dReLU(in_channels /*+ skip_channels*/, out_channels, 3, 1);
-	conv2 = Conv2dReLU(out_channels, out_channels, 3, 1);
+	conv1 = UNetsModule::Conv2dReLU(in_channels /*+ skip_channels*/, out_channels, 3, 1);
+	conv2 = UNetsModule::Conv2dReLU(out_channels, out_channels, 3, 1);
 	register_module("conv1", conv1);
 	register_module("conv2", conv2);
 	upsample = torch::nn::Upsample(torch::nn::UpsampleOptions().scale_factor(std::vector<double>({ 2,2 })).mode(torch::kNearest));
@@ -74,8 +75,8 @@ torch::Tensor DecoderBlockImpl::forward(torch::Tensor x, torch::Tensor skip) {
 
 torch::nn::Sequential CenterBlock(int in_channels, int out_channels)
 {
-	return torch::nn::Sequential(Conv2dReLU(in_channels, out_channels, 3, 1),
-		Conv2dReLU(out_channels, out_channels, 3, 1));
+	return torch::nn::Sequential(UNetsModule::Conv2dReLU(in_channels, out_channels, 3, 1),
+		UNetsModule::Conv2dReLU(out_channels, out_channels, 3, 1));
 }
 
 UNetDecoderImpl::UNetDecoderImpl(std::vector<int> encoder_channels, std::vector<int> decoder_channels,
@@ -85,27 +86,27 @@ UNetDecoderImpl::UNetDecoderImpl(std::vector<int> encoder_channels, std::vector<
 	CHECK(n_blocks == decoder_channels.size()) << "Model depth not equal to decoder_channels";
 
 	// 1 reverse encoder_channels 
-	std::cout << "1: " << decoder_channels << std::endl;
+//	std::cout << "1: " << decoder_channels << std::endl;
 	std::reverse(std::begin(encoder_channels), std::end(encoder_channels));
-	std::cout << "2 reverse : " << encoder_channels << std::endl;
+//	std::cout << "2 reverse : " << encoder_channels << std::endl;
 
 	int head_channels = encoder_channels[0];
 	std::vector<int> out_channels = decoder_channels;
-	std::cout << "2: " << out_channels << "   h: " <<  head_channels << std::endl;
+//	std::cout << "2: " << out_channels << "   h: " <<  head_channels << std::endl;
 
 	decoder_channels.pop_back();
 
-	std::cout << "3: " << out_channels << "   h: " << head_channels << std::endl;
+//	std::cout << "3: " << out_channels << "   h: " << head_channels << std::endl;
 	decoder_channels.insert(decoder_channels.begin(), head_channels);
-	std::cout << "4: " << out_channels << "   h: " << head_channels << std::endl;
+//	std::cout << "4: " << out_channels << "   h: " << head_channels << std::endl;
 
 	std::vector<int> in_channels = decoder_channels;
 	encoder_channels.erase(encoder_channels.begin());
-	std::cout << "5 erase : " << encoder_channels << std::endl;
+//	std::cout << "5 erase : " << encoder_channels << std::endl;
 
 	std::vector<int> skip_channels = encoder_channels;
 	skip_channels[skip_channels.size() - 1] = 0;
-	std::cout << "6 erase : " << skip_channels << std::endl;
+//	std::cout << "6 erase : " << skip_channels << std::endl;
 
 	if (use_center)
 	{
@@ -263,4 +264,6 @@ OutConvImpl::OutConvImpl(int in_channel, int out_channel)
 torch::Tensor OutConvImpl::forward(torch::Tensor x)
 {
 	return conv->forward(x);
+}
+
 }
